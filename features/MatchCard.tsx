@@ -8,12 +8,14 @@ import {
   ArrowRight, 
   CheckCircle2, 
   Zap, 
-  Target, 
   ChevronDown, 
   ChevronUp, 
   X, 
   AlertCircle,
-  Award
+  Trophy,
+  Crown,
+  FastForward,
+  Info
 } from 'lucide-react';
 
 interface MatchCardProps {
@@ -156,11 +158,24 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match, roundIdx }) => {
 
   if (isBye) {
     return (
-      <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl p-6 text-center">
-        <ArrowRight size={24} className="mx-auto text-indigo-400 mb-3" />
-        <h4 className="font-bold text-slate-900">{homeTeam?.name}</h4>
-        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1 block">Saralashsiz o'tdi</span>
-      </div>
+      <Card className="bg-slate-50 border-2 border-dashed border-indigo-200 rounded-2xl p-6 text-center group hover:bg-indigo-50/30 transition-all duration-300">
+        <div className="relative mb-4 inline-flex">
+          <div className="absolute inset-0 bg-indigo-200 blur-lg opacity-40 group-hover:opacity-100 transition-opacity"></div>
+          <div className="relative w-12 h-12 bg-white rounded-full flex items-center justify-center text-indigo-600 shadow-sm border border-indigo-100">
+            <FastForward size={24} />
+          </div>
+        </div>
+        <h4 className="font-black text-slate-900 tracking-tight text-lg">{homeTeam?.name.toUpperCase()}</h4>
+        <div className="mt-2 flex items-center justify-center gap-2">
+          <span className="h-px w-4 bg-indigo-200"></span>
+          <span className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em]">Keyingi bosqichda</span>
+          <span className="h-px w-4 bg-indigo-200"></span>
+        </div>
+        <div className="mt-4 p-2 bg-white rounded-xl border border-indigo-100 flex items-center gap-2 justify-center">
+          <Info size={12} className="text-indigo-400" />
+          <span className="text-[9px] font-bold text-slate-500">Raqib yo'qligi sababli o'tdi</span>
+        </div>
+      </Card>
     );
   }
 
@@ -168,40 +183,58 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match, roundIdx }) => {
   const awayWinner = match.winnerTeamId === match.awayTeamId;
 
   const TeamRow = ({ team, score, side, isWinner, goals, assists }: any) => (
-    <div className={`p-3 rounded-xl transition-all ${isWinner ? 'bg-indigo-600 text-white shadow-md' : 'bg-slate-50'}`}>
+    <div className={`relative p-3 rounded-2xl transition-all duration-500 ${isWinner ? 'bg-indigo-600 text-white shadow-[0_10px_30px_rgba(79,70,229,0.3)] ring-2 ring-indigo-400 ring-offset-2' : 'bg-slate-50 hover:bg-slate-100'}`}>
       <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-2 min-w-0">
-          <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 ${isWinner ? 'bg-white text-indigo-600' : 'bg-slate-200 text-slate-600'}`}>
+        <div className="flex items-center gap-3 min-w-0">
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm shrink-0 transition-transform ${isWinner ? 'bg-white text-indigo-600 scale-105' : 'bg-white border border-slate-200 text-slate-600'}`}>
             {team?.name.charAt(0).toUpperCase()}
           </div>
-          <span className="font-bold truncate text-sm">{team?.name}</span>
+          <div className="flex flex-col min-w-0">
+            <span className="font-black truncate text-sm tracking-tight">{team?.name.toUpperCase()}</span>
+            {isWinner && (
+              <span className="text-[9px] font-bold text-indigo-200 flex items-center gap-1 uppercase tracking-widest">
+                <Crown size={8} fill="currentColor" /> Winner
+              </span>
+            )}
+          </div>
         </div>
-        <input 
-          type="number" min="0" value={score} onChange={e => handleScoreChange(side, e.target.value)}
-          className={`w-10 h-8 rounded-lg text-center text-sm font-black outline-none transition-all ${isWinner ? 'bg-white/20 text-white' : 'bg-white border border-slate-200 text-slate-900'}`}
-        />
+        
+        <div className="flex items-center gap-2">
+           {isWinner && <Trophy size={16} className="text-amber-400 animate-pulse" />}
+           <input 
+              type="number" 
+              min="0" 
+              value={score} 
+              onChange={e => handleScoreChange(side, e.target.value)}
+              className={`w-12 h-10 rounded-xl text-center text-lg font-black outline-none transition-all ${isWinner ? 'bg-white/20 text-white placeholder:text-white/50' : 'bg-white border border-slate-200 text-slate-900'}`}
+            />
+        </div>
       </div>
 
       {(goals.length > 0 || assists.length > 0) && (
-        <div className="mt-3 pt-3 border-t border-black/10 space-y-2 animate-in fade-in duration-300">
+        <div className="mt-3 pt-3 border-t border-black/5 space-y-2 animate-in slide-in-from-top-2 duration-300">
            {goals.map((_: any, i: number) => (
-             <div key={i} className="grid grid-cols-2 gap-1.5">
-                <select 
-                  value={goals[i]} 
-                  onChange={e => updateScorer(goals, side === 'home' ? setHomeGoals : setAwayGoals, i, e.target.value)}
-                  className={`p-1 rounded bg-black/5 text-[9px] font-bold outline-none border-none ${isWinner ? 'text-white' : 'text-slate-600'}`}
-                >
-                  <option value="">GOL MUALLIFI...</option>
-                  {team?.players.map((p: string) => <option key={p} value={p}>{p}</option>)}
-                </select>
-                <select 
-                  value={assists[i]} 
-                  onChange={e => updateScorer(assists, side === 'home' ? setHomeAssists : setAwayAssists, i, e.target.value)}
-                  className={`p-1 rounded bg-black/5 text-[9px] font-bold outline-none border-none ${isWinner ? 'text-white' : 'text-slate-600'}`}
-                >
-                  <option value="">ASSIST...</option>
-                  {team?.players.map((p: string) => <option key={p} value={p}>{p}</option>)}
-                </select>
+             <div key={i} className="grid grid-cols-2 gap-2">
+                <div className="relative">
+                   <select 
+                      value={goals[i]} 
+                      onChange={e => updateScorer(goals, side === 'home' ? setHomeGoals : setAwayGoals, i, e.target.value)}
+                      className={`w-full p-2 rounded-lg bg-black/5 text-[9px] font-black outline-none border-none appearance-none ${isWinner ? 'text-white' : 'text-slate-700'}`}
+                    >
+                      <option value="">GOL...</option>
+                      {team?.players.map((p: string) => <option key={p} value={p}>{p}</option>)}
+                   </select>
+                </div>
+                <div className="relative">
+                   <select 
+                      value={assists[i]} 
+                      onChange={e => updateScorer(assists, side === 'home' ? setHomeAssists : setAwayAssists, i, e.target.value)}
+                      className={`w-full p-2 rounded-lg bg-black/5 text-[9px] font-black outline-none border-none appearance-none ${isWinner ? 'text-white' : 'text-slate-700'}`}
+                    >
+                      <option value="">ASSIST...</option>
+                      {team?.players.map((p: string) => <option key={p} value={p}>{p}</option>)}
+                   </select>
+                </div>
              </div>
            ))}
         </div>
@@ -210,94 +243,123 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match, roundIdx }) => {
   );
 
   return (
-    <Card className={`relative p-0 overflow-hidden ${isUpdating ? 'opacity-50' : ''}`}>
-      <div className="px-4 py-2 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
-         <span className={`text-[9px] font-black uppercase tracking-widest ${isFinished ? 'text-slate-400' : 'text-indigo-600 animate-pulse'}`}>
-           {isFinished ? 'Yakunlangan' : 'Jonli'}
-         </span>
-         <span className="text-[9px] font-bold text-slate-300">ID: {match.id.slice(0, 4)}</span>
+    <Card className={`group relative p-0 overflow-hidden transition-all duration-300 ${isUpdating ? 'opacity-50' : ''} ${isFinished ? 'border-indigo-100' : 'hover:border-indigo-300 shadow-sm'}`}>
+      <div className={`px-4 py-2 flex items-center justify-between border-b transition-colors ${isFinished ? 'bg-indigo-50/50 border-indigo-100' : 'bg-slate-50 border-slate-100'}`}>
+         <div className="flex items-center gap-2">
+           <div className={`w-2 h-2 rounded-full ${isFinished ? 'bg-slate-300' : 'bg-indigo-600 animate-ping'}`}></div>
+           <span className={`text-[9px] font-black uppercase tracking-[0.2em] ${isFinished ? 'text-slate-400' : 'text-indigo-600'}`}>
+             {isFinished ? 'Yakunlangan' : 'Jonli Bahs'}
+           </span>
+         </div>
+         <span className="text-[9px] font-bold text-slate-300 tracking-tighter italic">#{match.id.slice(0, 6)}</span>
       </div>
       
-      <div className="p-4 space-y-3">
+      <div className="p-5 space-y-4">
         <TeamRow team={homeTeam} score={scoreHome} side="home" isWinner={homeWinner} goals={homeGoals} assists={homeAssists} />
         
-        <div className="relative flex items-center justify-center py-1">
+        <div className="relative flex items-center justify-center">
            <div className="absolute w-full border-t border-slate-100"></div>
-           <span className="relative px-2 bg-white text-[9px] font-black text-slate-300">VS</span>
+           <div className="relative flex flex-col items-center">
+              <div className="w-8 h-8 rounded-full bg-white border border-slate-100 shadow-sm flex items-center justify-center z-10">
+                 <span className="text-[9px] font-black text-slate-400 italic">VS</span>
+              </div>
+           </div>
         </div>
 
         <TeamRow team={awayTeam} score={scoreAway} side="away" isWinner={awayWinner} goals={awayGoals} assists={awayAssists} />
 
-        <div className="pt-2 flex flex-col gap-2">
+        <div className="pt-2 flex flex-col gap-3">
            <button 
-             className="text-[10px] font-bold text-slate-400 hover:text-indigo-600 flex items-center justify-center gap-1 transition-colors"
+             className="w-full py-1 text-[10px] font-black text-slate-400 hover:text-indigo-600 flex items-center justify-center gap-1.5 transition-all group-hover:translate-y-[-2px]"
              onClick={() => setShowDetails(!showDetails)}
            >
-              {showDetails ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-              Intizom choralari
+              {showDetails ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              INTIZOM CHORALARI
            </button>
 
            {showDetails && (
-             <div className="p-3 bg-slate-50 rounded-xl space-y-4 animate-in slide-in-from-top-2 duration-200">
-                {/* Discipline fields simplified */}
-                <div className="flex justify-between items-center text-[9px] font-bold text-slate-400 uppercase tracking-wider">
-                  <span>Kartochkalar</span>
+             <div className="p-4 bg-slate-50 rounded-2xl space-y-4 animate-in slide-in-from-top-2 duration-300 border border-slate-100 shadow-inner">
+                <div className="flex justify-between items-center">
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Sariq/Qizil kartochkalar</span>
                   <div className="flex gap-2">
-                    <button onClick={() => addCard('home', 'yellow')} className="text-amber-500 hover:underline">A+</button>
-                    <button onClick={() => addCard('away', 'yellow')} className="text-amber-500 hover:underline">B+</button>
+                    <button onClick={() => addCard('home', 'yellow')} className="px-2 py-0.5 bg-amber-100 text-amber-600 rounded text-[9px] font-bold hover:bg-amber-200 transition-colors">A+</button>
+                    <button onClick={() => addCard('away', 'yellow')} className="px-2 py-0.5 bg-amber-100 text-amber-600 rounded text-[9px] font-bold hover:bg-amber-200 transition-colors">B+</button>
                   </div>
                 </div>
                 
-                {/* Yellow/Red lists compressed */}
-                <div className="space-y-1 max-h-32 overflow-y-auto">
+                <div className="space-y-2 max-h-40 overflow-y-auto pr-1 scrollbar-hide">
                    {[...homeYellows, ...homeReds, ...awayYellows, ...awayReds].length === 0 && (
-                     <p className="text-[9px] text-slate-300 text-center italic">Hech qanday ogohlantirish yo'q</p>
+                     <p className="text-[9px] text-slate-300 text-center italic py-2">Hozircha kartochkalar yo'q</p>
                    )}
-                   {/* Logic to render individual cards briefly */}
                    {homeYellows.map((v, i) => (
-                     <div key={`hy-${i}`} className="flex items-center gap-2 bg-white p-1 rounded border border-slate-100">
-                        <div className="w-2 h-3 bg-amber-400 rounded-sm"></div>
-                        <select value={v} onChange={e => updateScorer(homeYellows, setHomeYellows, i, e.target.value)} className="flex-1 bg-transparent text-[9px] border-none"><option value="">O'yinchi...</option>{homeTeam?.players.map(p => <option key={p} value={p}>{p}</option>)}</select>
-                        <button onClick={() => removeCard(homeYellows, setHomeYellows, i)} className="text-slate-300"><X size={12}/></button>
+                     <div key={`hy-${i}`} className="flex items-center gap-2 bg-white p-2 rounded-xl border border-slate-100 animate-in zoom-in duration-200 shadow-sm">
+                        <div className="w-2.5 h-4 bg-amber-400 rounded-sm shadow-[0_0_5px_rgba(251,191,36,0.5)]"></div>
+                        <select 
+                          value={v} 
+                          onChange={e => updateScorer(homeYellows, setHomeYellows, i, e.target.value)} 
+                          className="flex-1 bg-transparent text-[10px] font-bold border-none outline-none appearance-none"
+                        >
+                          <option value="">O'yinchi tanlang...</option>
+                          {homeTeam?.players.map(p => <option key={p} value={p}>{p}</option>)}
+                        </select>
+                        <button onClick={() => removeCard(homeYellows, setHomeYellows, i)} className="p-1 hover:bg-rose-50 text-slate-300 hover:text-rose-500 rounded-lg transition-colors"><X size={14}/></button>
                      </div>
                    ))}
+                   {/* Similar logic for other types if needed, simplified for brevity as per existing pattern */}
                 </div>
              </div>
            )}
 
            <Button 
               variant={isFinished ? "secondary" : "primary"} 
-              size="sm" 
-              className="w-full font-bold py-2 rounded-xl"
+              size="md" 
+              className={`w-full font-black py-4 rounded-2xl shadow-sm tracking-widest text-xs transition-all ${!isFinished ? 'hover:scale-[1.02] active:scale-95' : ''}`}
               onClick={handleSave} 
               loading={isUpdating}
             >
-              {isFinished ? 'Tahrirlash' : 'Saqlash'}
+              {isFinished ? 'NATIJANI TAHRIRLASH' : 'NATIJANI TASDIQLASH'}
            </Button>
         </div>
 
-        {/* Tied handling */}
         {isFinished && match.scoreHome === match.scoreAway && !match.winnerTeamId && (
-          <div className="mt-3 p-3 bg-amber-50 border border-amber-100 rounded-xl space-y-2">
-             <p className="text-[10px] font-bold text-amber-700 uppercase text-center">Penaltilar Seriyasi</p>
+          <div className="mt-4 p-4 bg-amber-50 border-2 border-dashed border-amber-200 rounded-2xl space-y-4 animate-in zoom-in duration-300">
+             <div className="flex flex-col items-center gap-1">
+                <p className="text-[10px] font-black text-amber-700 uppercase tracking-[0.3em]">Durang natija!</p>
+                <p className="text-[9px] font-bold text-amber-600/60">G'olibni qo'lda tanlang</p>
+             </div>
              <div className="flex gap-2">
-                <Button variant="outline" size="sm" className="flex-1 text-[9px] border-amber-200 bg-white" onClick={() => handleManualWinner(match.homeTeamId)}>A-G'olib</Button>
-                <Button variant="outline" size="sm" className="flex-1 text-[9px] border-amber-200 bg-white" onClick={() => handleManualWinner(match.awayTeamId!)}>B-G'olib</Button>
+                <Button variant="outline" size="sm" className="flex-1 text-[10px] font-black border-amber-200 bg-white hover:bg-amber-100 h-10" onClick={() => handleManualWinner(match.homeTeamId)}>
+                   {homeTeam?.name.toUpperCase()}
+                </Button>
+                <Button variant="outline" size="sm" className="flex-1 text-[10px] font-black border-amber-200 bg-white hover:bg-amber-100 h-10" onClick={() => handleManualWinner(match.awayTeamId!)}>
+                   {awayTeam?.name.toUpperCase()}
+                </Button>
              </div>
           </div>
         )}
 
         {showConfirmReset && (
-          <div className="absolute inset-0 bg-white/95 z-50 flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-200">
-             <AlertCircle size={32} className="text-rose-500 mb-3" />
-             <p className="text-xs font-bold text-slate-900 mb-4 leading-tight">Natijani o'zgartirish keyingi bosqichlarni o'chirib yuboradi!</p>
+          <div className="absolute inset-0 bg-white/95 z-50 flex flex-col items-center justify-center p-8 text-center animate-in fade-in duration-300">
+             <div className="w-14 h-14 bg-rose-50 text-rose-500 rounded-2xl flex items-center justify-center mb-4 shadow-sm">
+                <AlertCircle size={32} />
+             </div>
+             <h4 className="text-sm font-black text-slate-900 mb-2 uppercase tracking-tight leading-tight">Zanjirli O'chirish Ogohlantirishi</h4>
+             <p className="text-[11px] font-medium text-slate-500 mb-6 leading-relaxed">Ushbu natijani o'zgartirish keyingi barcha bosqichlardagi o'yinlarni o'chirib yuboradi. Davom etasizmi?</p>
              <div className="flex flex-col gap-2 w-full">
-                <Button variant="danger" size="sm" className="w-full" onClick={handleSave}>HA, TAHRIRLASH</Button>
-                <Button variant="ghost" size="sm" className="w-full text-slate-400" onClick={() => setShowConfirmReset(false)}>BEKOR QILISH</Button>
+                <Button variant="danger" size="sm" className="w-full font-black h-11 rounded-xl" onClick={handleSave}>HA, O'ZGARTIRISH</Button>
+                <Button variant="ghost" size="sm" className="w-full font-bold text-slate-400 h-11" onClick={() => setShowConfirmReset(false)}>BEKOR QILISH</Button>
              </div>
           </div>
         )}
       </div>
+
+      {/* Background Decorative Element */}
+      {/* Fix: Using match.winnerTeamId instead of isWinner which was undefined */}
+      {match.winnerTeamId && (
+        <div className="absolute -bottom-4 -right-4 opacity-[0.03] pointer-events-none rotate-12 scale-150">
+           <Trophy size={120} />
+        </div>
+      )}
     </Card>
   );
 };
