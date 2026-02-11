@@ -24,9 +24,10 @@ import {
   Calendar,
   Undo2,
   ChevronLeft,
-  Crown
+  Crown,
+  Target,
+  Layout
 } from 'lucide-react';
-// Added Tournament to the imports
 import { Team, Round, Match, Tournament } from '../types';
 
 type Stage = 'intro' | 'countdown' | 'picking_home' | 'ball_shaking_home' | 'revealing_home' | 'picking_away' | 'ball_shaking_away' | 'revealing_away' | 'match_slam' | 'summary';
@@ -64,7 +65,6 @@ const DrawCeremony: React.FC<{ teams: Team[], onComplete: () => void, onCancel: 
     return p;
   }, [teams]);
 
-  // FIX: Define targetPair in component scope so it's accessible in JSX
   const targetPair = pairs[matchResults.length];
 
   const triggerParticles = () => {
@@ -143,10 +143,8 @@ const DrawCeremony: React.FC<{ teams: Team[], onComplete: () => void, onCancel: 
     <div className={`fixed inset-0 z-[100] bg-[#020617] text-white flex flex-col items-center justify-center p-4 scanline-effect overflow-hidden transition-all duration-300 ${currentStage === 'match_slam' ? 'animate-screen-shake' : ''}`}>
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_#1e1b4b_0%,_#020617_70%)] opacity-60"></div>
       
-      {/* Dynamic Background Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-20">
          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] border border-white/10 rounded-full animate-spin" style={{ animationDuration: '20s' }}></div>
-         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1200px] h-[1200px] border border-white/5 rounded-full animate-spin" style={{ animationDuration: '40s', animationDirection: 'reverse' }}></div>
       </div>
 
       <button 
@@ -157,7 +155,6 @@ const DrawCeremony: React.FC<{ teams: Team[], onComplete: () => void, onCancel: 
       </button>
 
       <div className="relative z-10 w-full max-w-5xl flex flex-col items-center gap-16 text-center">
-         
          {currentStage === 'intro' && (
            <div className="animate-in zoom-in fade-in duration-700 space-y-6">
              <Trophy size={100} className="mx-auto text-amber-400 animate-bounce" />
@@ -177,12 +174,7 @@ const DrawCeremony: React.FC<{ teams: Team[], onComplete: () => void, onCancel: 
            <div className="animate-in zoom-in fade-in duration-700 space-y-10 relative">
              <div className="w-64 h-64 bg-slate-900 border-4 border-indigo-500/50 rounded-full mx-auto flex items-center justify-center shadow-2xl relative overflow-hidden">
                 <div className="absolute inset-0 bg-indigo-500/10 animate-pulse"></div>
-                <Dices size={120} className={`text-indigo-400 z-10 ${currentStage.startsWith('ball_shaking') ? 'animate-ball-shake' : 'animate-spin'}`} style={{ animationDuration: currentStage.startsWith('ball_shaking') ? '0.3s' : '2s' }} />
-                {currentStage.startsWith('ball_shaking') && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-full h-full bg-white/20 blur-2xl animate-pulse"></div>
-                  </div>
-                )}
+                <Dices size={120} className={`text-indigo-400 z-10 ${currentStage.startsWith('ball_shaking') ? 'animate-ball-shake' : 'animate-spin'}`} />
              </div>
              <h2 className="text-4xl font-black uppercase italic tracking-[0.2em] animate-pulse">
                 {currentStage.includes('home') ? 'UY EGASI...' : 'MEHMON...'}
@@ -192,13 +184,9 @@ const DrawCeremony: React.FC<{ teams: Team[], onComplete: () => void, onCancel: 
 
          {(currentStage.includes('revealing') || currentStage === 'match_slam') && (
             <div className="w-full flex items-center justify-center gap-8 lg:gap-16 relative">
-               
-               {/* Burst Effect on Reveal */}
                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-0">
                   <div className="w-20 h-20 bg-white rounded-full animate-burst"></div>
                </div>
-
-               {/* Home Team */}
                <div className={`flex-1 flex flex-col items-center gap-6 animate-reveal z-10`}>
                   <div className={`w-64 h-64 bg-slate-900 border-4 rounded-[3rem] shadow-2xl flex flex-col items-center justify-center p-8 transition-all duration-500 ${currentPair.h ? 'border-emerald-500 bg-emerald-950/20' : 'border-indigo-500'}`}>
                      {currentPair.h ? (
@@ -208,19 +196,15 @@ const DrawCeremony: React.FC<{ teams: Team[], onComplete: () => void, onCancel: 
                      )}
                   </div>
                </div>
-
-               {/* VS / SLAM */}
                <div className="shrink-0 z-20">
                   {currentStage === 'match_slam' ? (
-                    <div className="animate-slam bg-white text-black px-12 py-6 text-8xl font-black italic shadow-[0_0_80px_#fff] -rotate-3">VS</div>
+                    <div className="animate-slam bg-white text-black px-12 py-6 text-8xl font-black italic shadow-[0_0_80px_#fff] -rotate-3 border-4 border-black">VS</div>
                   ) : (
                     <div className="relative">
                        <Swords size={60} className="text-white/20 animate-pulse scale-150 rotate-12" />
                     </div>
                   )}
                </div>
-
-               {/* Away Team */}
                <div className={`flex-1 flex flex-col items-center gap-6 transition-all duration-500 z-10 ${currentStage.includes('revealing_away') || currentStage === 'match_slam' ? 'opacity-100' : 'opacity-0 scale-90'}`}>
                   <div className={`w-64 h-64 bg-slate-900 border-4 rounded-[3rem] shadow-2xl flex flex-col items-center justify-center p-8 transition-all duration-500 ${currentPair.a ? 'border-rose-500 bg-rose-950/20' : 'border-indigo-500'}`}>
                      {currentPair.a ? (
@@ -234,8 +218,6 @@ const DrawCeremony: React.FC<{ teams: Team[], onComplete: () => void, onCancel: 
                      )}
                   </div>
                </div>
-
-               {/* Particle Effects */}
                {particles.map(id => <Particle key={id} color={id % 2 === 0 ? '#4f46e5' : '#10b981'} />)}
             </div>
          )}
@@ -246,7 +228,6 @@ const DrawCeremony: React.FC<{ teams: Team[], onComplete: () => void, onCancel: 
                   <div className="absolute inset-0 bg-indigo-500 blur-[60px] opacity-30 animate-pulse"></div>
                   <h2 className="text-7xl lg:text-8xl font-black italic uppercase tracking-tighter relative z-10">Qura Yakunlandi</h2>
                </div>
-               
                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {matchResults.map((m, i) => (
                     <div key={i} className="bg-white/5 border border-white/10 p-4 rounded-2xl flex items-center justify-between font-bold italic uppercase tracking-tight">
@@ -256,7 +237,6 @@ const DrawCeremony: React.FC<{ teams: Team[], onComplete: () => void, onCancel: 
                     </div>
                   ))}
                </div>
-
                <div className="flex flex-col sm:flex-row gap-4 pt-6">
                   <Button size="lg" onClick={onComplete} className="flex-1 h-24 rounded-[2rem] bg-indigo-600 hover:bg-indigo-700 text-white font-black text-3xl shadow-[0_20px_40px_rgba(79,70,229,0.4)] hover:scale-[1.02] transition-all">DAVOM ETISH</Button>
                   <Button variant="glass" size="lg" onClick={onCancel} className="px-10 h-24 rounded-[2rem] font-bold text-xl border-white/40">BEKOR QILISH</Button>
@@ -268,10 +248,8 @@ const DrawCeremony: React.FC<{ teams: Team[], onComplete: () => void, onCancel: 
   );
 };
 
-// Added RoadmapPoster component to fix "Cannot find name 'RoadmapPoster'" error
 const RoadmapPoster: React.FC<{ tournament: Tournament, teams: Team[], rounds: Round[], id: string }> = ({ tournament, teams, rounds, id }) => {
   const getTeamName = (id: string | null) => teams.find(t => t.id === id)?.name || 'N/A';
-  
   return (
     <div id={id} className="w-[1200px] h-[800px] bg-slate-950 p-12 text-white flex flex-col items-center justify-between relative overflow-hidden">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_#1e1b4b_0%,_#020617_70%)] opacity-60"></div>
@@ -282,7 +260,6 @@ const RoadmapPoster: React.FC<{ tournament: Tournament, teams: Team[], rounds: R
         </div>
         <p className="text-indigo-400 font-bold uppercase tracking-[0.3em]">Turnir Jadvali / Roadmap</p>
       </div>
-
       <div className="relative z-10 w-full flex-1 flex items-center justify-around gap-8 mt-12">
         {rounds.map((round, rIdx) => (
           <div key={rIdx} className="flex-1 flex flex-col gap-6">
@@ -305,7 +282,6 @@ const RoadmapPoster: React.FC<{ tournament: Tournament, teams: Team[], rounds: R
           </div>
         ))}
       </div>
-
       <div className="relative z-10 w-full border-t border-white/10 pt-8 flex justify-between items-center text-[10px] font-bold text-slate-500 uppercase tracking-widest">
         <span>EduCup Tournament Manager</span>
         <span>Generated: {new Date().toLocaleString()}</span>
@@ -314,18 +290,15 @@ const RoadmapPoster: React.FC<{ tournament: Tournament, teams: Team[], rounds: R
   );
 };
 
-// Added SquadPoster component to fix "Cannot find name 'SquadPoster'" error
 const SquadPoster: React.FC<{ team: Team, tournamentName: string, id: string }> = ({ team, tournamentName, id }) => {
   return (
     <div id={id} className="w-[800px] h-[1000px] bg-slate-900 p-16 text-white flex flex-col items-center justify-between relative overflow-hidden">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_#1e1b4b_0%,_#020617_80%)] opacity-60"></div>
-      
       <div className="relative z-10 text-center space-y-2">
         <p className="text-indigo-400 text-sm font-black uppercase tracking-[0.4em] mb-4">{tournamentName}</p>
         <h1 className="text-7xl font-black uppercase italic tracking-tighter mb-2">{team.name}</h1>
         <div className="w-24 h-1.5 bg-indigo-600 mx-auto rounded-full"></div>
       </div>
-
       <div className="relative z-10 w-full flex-1 flex flex-col items-center justify-center space-y-8 mt-12">
         <div className="grid grid-cols-1 gap-4 w-full max-w-md">
           {team.players.map((player, idx) => (
@@ -337,7 +310,6 @@ const SquadPoster: React.FC<{ team: Team, tournamentName: string, id: string }> 
           ))}
         </div>
       </div>
-
       <div className="relative z-10 flex flex-col items-center gap-4">
         <Users size={48} className="text-indigo-500 opacity-20" />
         <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">Official Team Roster</p>
@@ -363,22 +335,13 @@ export const Bracket: React.FC = () => {
     try {
       const originalLeft = node.style.left;
       const originalPosition = node.style.position;
-      
       if (node.style.left === '-5000px') {
         node.style.left = '0';
         node.style.position = 'fixed';
       }
-
-      const dataUrl = await htmlToImage.toPng(node, { 
-        quality: 1, 
-        pixelRatio: 2,
-        cacheBust: true,
-        fontEmbedCSS: '', 
-      });
-      
+      const dataUrl = await htmlToImage.toPng(node, { quality: 1, pixelRatio: 2, cacheBust: true, fontEmbedCSS: '' });
       node.style.left = originalLeft;
       node.style.position = originalPosition;
-      
       const link = document.createElement('a');
       link.download = `${fileName}.png`;
       link.href = dataUrl;
@@ -402,22 +365,68 @@ export const Bracket: React.FC = () => {
 
   if (rounds.length === 0) {
     return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center text-center space-y-10">
-        <div className="relative">
-           <Zap size={80} className="text-indigo-600 animate-pulse" />
-           <div className="absolute inset-0 bg-indigo-400 blur-3xl opacity-20 animate-orbit"></div>
-        </div>
-        <div className="space-y-4">
-           <h1 className="text-4xl font-black text-slate-900 uppercase tracking-tight">Qura marosimi tayyor</h1>
-           <p className="text-slate-500 max-w-sm mx-auto font-medium">Barcha jamoalar shakllantirildi. Qura tashlash marosimi orqali raqiblarni aniqlang.</p>
-        </div>
-        <div className="flex flex-col sm:flex-row gap-4 w-full max-w-md">
-           <Button size="lg" onClick={() => setShowCeremony(true)} className="flex-1 rounded-2xl px-16 h-20 text-xl font-black shadow-2xl">
-              MAROSIMNI BOSHLASH
-           </Button>
-           <Button variant="outline" size="lg" onClick={() => navigate('/teams')} className="rounded-2xl px-8 h-20 font-bold text-slate-500 border-slate-200">
-              <Undo2 size={20} className="mr-2" /> JAMOALARGA QAYTISH
-           </Button>
+      <div className="min-h-[85vh] w-full flex flex-col items-center justify-center py-10 px-6 relative overflow-hidden animate-in fade-in duration-700">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-indigo-500/5 blur-[120px] pointer-events-none"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-500/5 blur-[120px] pointer-events-none"></div>
+
+        <div className="relative z-10 w-full max-w-4xl flex flex-col items-center text-center space-y-12">
+          {/* Decorative Hero Section */}
+          <div className="relative flex flex-col items-center">
+            <div className="absolute -top-12 inset-x-0 flex justify-center opacity-30">
+               <div className="w-32 h-32 bg-indigo-600 rounded-full blur-3xl animate-pulse"></div>
+            </div>
+            <div className="relative w-24 h-24 bg-white rounded-3xl shadow-xl flex items-center justify-center text-indigo-600 mb-8 border border-slate-100 animate-sphere-float">
+               <Zap size={48} className="drop-shadow-sm" fill="currentColor" />
+            </div>
+            <h1 className="text-4xl md:text-6xl font-black text-slate-900 uppercase italic tracking-tighter leading-none mb-4">
+              Qura Marosimi <br /> 
+              <span className="text-indigo-600">Tayyor!</span>
+            </h1>
+            <p className="text-slate-500 max-w-lg mx-auto font-bold text-sm md:text-base uppercase tracking-widest leading-relaxed opacity-70">
+              Barcha jamoalar ro'yxatdan o'tdi. Endi qura tashlash orqali raqiblarni aniqlash vaqti keldi.
+            </p>
+          </div>
+
+          {/* Setup Summary Card */}
+          <Card className="w-full max-w-2xl bg-white/40 backdrop-blur-md border border-white/60 p-0 overflow-hidden shadow-2xl">
+             <div className="bg-slate-900 text-white p-6 flex items-center justify-between border-b border-slate-800">
+                <div className="flex items-center gap-3">
+                   <div className="p-2 bg-indigo-600 rounded-lg">
+                      <Layout size={18} />
+                   </div>
+                   <h3 className="text-xs font-black uppercase tracking-widest italic">Turnir Konfiguratsiyasi</h3>
+                </div>
+                <Badge variant="indigo" className="bg-indigo-500/20 text-indigo-200 border-indigo-400/30">Ready to Draw</Badge>
+             </div>
+             <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-slate-100">
+                <div className="p-8 flex flex-col items-center gap-2">
+                   <Users className="text-slate-300" size={24} />
+                   <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Jamoalar</span>
+                   <span className="text-2xl font-black italic">{teams.length} ta</span>
+                </div>
+                <div className="p-8 flex flex-col items-center gap-2">
+                   <Target className="text-slate-300" size={24} />
+                   <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Format</span>
+                   <span className="text-2xl font-black italic">{tournament.playersPerTeam}×{tournament.playersPerTeam}</span>
+                </div>
+                <div className="p-8 flex flex-col items-center gap-2">
+                   <Trophy className="text-slate-300" size={24} />
+                   <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Bosqichlar</span>
+                   <span className="text-2xl font-black italic">{Math.ceil(Math.log2(teams.length))} ta</span>
+                </div>
+             </div>
+          </Card>
+
+          {/* Action Buttons */}
+          <div className="flex flex-col sm:flex-row gap-4 w-full max-w-md pt-4">
+             <Button size="xl" onClick={() => setShowCeremony(true)} className="flex-1 h-20 rounded-[1.8rem] text-xl font-black shadow-[0_20px_40px_rgba(79,70,229,0.2)] hover:scale-[1.03] transition-all group overflow-hidden relative">
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                MAROSIMNI BOSHLASH
+             </Button>
+             <Button variant="secondary" size="xl" onClick={() => navigate('/teams')} className="px-10 h-20 rounded-[1.8rem] font-bold text-slate-500 border-slate-200 bg-white/80 hover:bg-slate-50">
+                <Undo2 size={20} className="mr-2" /> TAHRIRLASH
+             </Button>
+          </div>
         </div>
       </div>
     );
@@ -470,7 +479,6 @@ export const Bracket: React.FC = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-           {/* ROADMAP POSTER CARD */}
            <Card className="p-0 overflow-hidden flex flex-col group border-2 border-transparent hover:border-green-500 transition-all shadow-md">
               <div className="h-72 bg-green-900 relative flex items-center justify-center p-6 text-center overflow-hidden">
                  <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/grass.png')] opacity-20"></div>
@@ -488,8 +496,6 @@ export const Bracket: React.FC = () => {
                  </Button>
               </div>
            </Card>
-
-           {/* SQUAD POSTERS */}
            {teams.map((team, idx) => (
              <Card key={idx} className="p-0 overflow-hidden flex flex-col group border-2 border-transparent hover:border-indigo-500 transition-all shadow-md">
                 <div className="h-72 bg-slate-900 relative flex items-center justify-center p-6 text-center overflow-hidden">
@@ -511,7 +517,6 @@ export const Bracket: React.FC = () => {
         </div>
       )}
 
-      {/* Hidden container for background exporting */}
       <div className="fixed left-[-5000px] top-0 pointer-events-none">
          <RoadmapPoster tournament={tournament} teams={teams} rounds={rounds} id="roadmap-poster-export" />
          {teams.map(team => (
@@ -519,7 +524,6 @@ export const Bracket: React.FC = () => {
          ))}
       </div>
 
-      {/* Preview Modal */}
       {previewData && (
         <div className="fixed inset-0 z-[150] bg-slate-900/95 backdrop-blur-xl flex items-center justify-center p-4 lg:p-10">
            <div className="w-full max-w-6xl bg-white rounded-[3rem] overflow-hidden shadow-2xl animate-in zoom-in duration-300 flex flex-col h-full max-h-[900px]">
@@ -532,7 +536,6 @@ export const Bracket: React.FC = () => {
                     <X size={32} />
                  </button>
               </div>
-              
               <div className="flex-1 overflow-auto bg-slate-100/50 p-12 flex justify-center items-center">
                  <div className={`transform origin-center transition-transform ${previewData.type === 'roadmap' ? 'scale-[0.45]' : 'scale-[0.4]'}`}>
                     {previewData.type === 'roadmap' ? (
@@ -542,14 +545,8 @@ export const Bracket: React.FC = () => {
                     )}
                  </div>
               </div>
-
               <div className="p-10 bg-white flex flex-col sm:flex-row gap-5 border-t border-slate-100 shrink-0">
-                 <Button 
-                   size="lg" 
-                   className="flex-1 h-20 rounded-3xl text-2xl font-black shadow-xl shadow-indigo-100" 
-                   onClick={() => downloadPoster(previewData.id, `${previewData.type}_${previewData.team?.name || 'tournament'}`)}
-                   loading={exporting !== null}
-                 >
+                 <Button size="lg" className="flex-1 h-20 rounded-3xl text-2xl font-black shadow-xl shadow-indigo-100" onClick={() => downloadPoster(previewData.id, `${previewData.type}_${previewData.team?.name || 'tournament'}`)} loading={exporting !== null}>
                     <Download size={28} className="mr-4" /> HQ PNG YUKLASH
                  </Button>
                  <Button variant="secondary" size="lg" className="px-12 h-20 rounded-3xl text-xl font-bold border-slate-200" onClick={() => setPreviewData(null)}>
