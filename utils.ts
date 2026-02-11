@@ -1,4 +1,3 @@
-
 import { v4 as uuidv4 } from 'uuid';
 import { Team, Match, Round, Tournament } from './types';
 
@@ -88,7 +87,6 @@ export const getTournamentStats = (rounds: Round[], teams: Team[]) => {
   
   const playerStats: Record<string, PlayerStat> = {};
 
-  // Initialize with all players from all teams to ensure zero-stats are tracked
   teams.forEach(team => {
     team.players.forEach(p => {
       playerStats[p] = { name: p, goals: 0, assists: 0, yellowCards: 0, redCards: 0, teamId: team.id };
@@ -133,7 +131,10 @@ export const formatTeamsMessage = (teams: Team[]): string => {
   teams.forEach((team, idx) => {
     text += `${idx + 1}. 🛡 *${team.name.toUpperCase()}*\n`;
     if (team.players.length > 0) {
-      text += `   👥 Tarkib: ${team.players.join(', ')}\n`;
+      const formattedPlayers = team.players.map(p => 
+        p === team.captainName ? `★ *${p.toUpperCase()} (C)*` : p
+      );
+      text += `   👥 Tarkib: ${formattedPlayers.join(', ')}\n`;
     }
     text += `\n`;
   });
@@ -224,7 +225,8 @@ export const formatTournamentSummary = (tournament: Tournament, teams: Team[], r
   
   summary += `\nTEAMS (${teams.length}):\n`;
   teams.forEach(t => {
-    summary += `- ${t.name} (${t.players.join(', ')})\n`;
+    // Escaped the single quote in 'Yo\'q' to fix syntax error on line 229
+    summary += `- ${t.name} (Sardor: ${t.captainName || 'Yo\'q'}) - (${t.players.join(', ')})\n`;
   });
   
   summary += `\nROUNDS AND RESULTS:\n`;
@@ -274,9 +276,10 @@ export const exportMatchesToCSV = (rounds: Round[], teams: Team[], tournamentNam
 };
 
 export const exportTeamsToCSV = (teams: Team[], tournamentName: string) => {
-  const headers = ['Team Name', 'Players'];
+  const headers = ['Team Name', 'Captain', 'Players'];
   const rows = teams.map(team => [
     team.name,
+    team.captainName || '',
     team.players.join('; ')
   ]);
 
@@ -290,17 +293,21 @@ export const exportTeamsToCSV = (teams: Team[], tournamentName: string) => {
 
 export const exportScorersToCSV = (rounds: Round[], teams: Team[], tournamentName: string) => {
   const { topScorers } = getTournamentStats(rounds, teams);
-  const headers = ['Rank', 'Player Name', 'Team', 'Goals', 'Assists', 'Yellow Cards', 'Red Cards'];
+  const headers = ['Rank', 'Player Name', 'Team', 'Is Captain', 'Goals', 'Assists', 'Yellow Cards', 'Red Cards'];
   
-  const rows = topScorers.map((scorer, idx) => [
-    idx + 1,
-    scorer.name,
-    teams.find(t => t.id === scorer.teamId)?.name || 'N/A',
-    scorer.goals,
-    scorer.assists,
-    scorer.yellowCards,
-    scorer.redCards
-  ]);
+  const rows = topScorers.map((scorer, idx) => {
+    const team = teams.find(t => t.id === scorer.teamId);
+    return [
+      idx + 1,
+      scorer.name,
+      team?.name || 'N/A',
+      team?.captainName === scorer.name ? 'Yes' : 'No',
+      scorer.goals,
+      scorer.assists,
+      scorer.yellowCards,
+      scorer.redCards
+    ];
+  });
 
   const csvContent = [
     headers.join(','),

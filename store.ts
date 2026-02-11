@@ -12,6 +12,7 @@ interface TournamentActions {
   seedTeams: () => void;
   removeTeam: (id: string) => void;
   updateTeamPlayers: (id: string, players: string[]) => void;
+  setTeamCaptain: (id: string, playerName: string) => void;
   startTournament: () => void;
   reShuffleRound1: () => void;
   updateMatch: (roundIdx: number, matchId: string, updates: Partial<Match>) => void;
@@ -66,7 +67,8 @@ export const useTournamentStore = create<TournamentState & TournamentActions>()(
           return {
             id: uuidv4(),
             name: name,
-            players: players
+            players: players,
+            captainName: players[0] // Avtomatik birinchi o'yinchini sardor qilish
           };
         });
         set({ teams: newTeams });
@@ -79,6 +81,10 @@ export const useTournamentStore = create<TournamentState & TournamentActions>()(
 
       updateTeamPlayers: (id, players) => set(state => ({
         teams: state.teams.map(t => t.id === id ? { ...t, players } : t)
+      })),
+
+      setTeamCaptain: (id, playerName) => set(state => ({
+        teams: state.teams.map(t => t.id === id ? { ...t, captainName: playerName } : t)
       })),
 
       startTournament: () => {

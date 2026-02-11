@@ -1,9 +1,10 @@
 
 import React from 'react';
 import { useTournamentStore } from '../store';
-import { Match } from '../types';
+import { Match, Team } from '../types';
 import { Card } from '../shared/ui/Card';
 import { Button } from '../shared/ui/Button';
+import { Badge } from '../shared/ui/Badge';
 import { 
   ArrowRight, 
   CheckCircle2, 
@@ -15,7 +16,8 @@ import {
   Trophy,
   Crown,
   FastForward,
-  Info
+  Info,
+  Star
 } from 'lucide-react';
 
 interface MatchCardProps {
@@ -182,7 +184,7 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match, roundIdx }) => {
   const homeWinner = match.winnerTeamId === match.homeTeamId;
   const awayWinner = match.winnerTeamId === match.awayTeamId;
 
-  const TeamRow = ({ team, score, side, isWinner, goals, assists }: any) => (
+  const TeamRow = ({ team, score, side, isWinner, goals, assists }: { team: Team | undefined, score: string, side: 'home' | 'away', isWinner: boolean, goals: string[], assists: string[] }) => (
     <div className={`relative p-3 rounded-2xl transition-all duration-500 ${isWinner ? 'bg-indigo-600 text-white shadow-[0_10px_30px_rgba(79,70,229,0.3)] ring-2 ring-indigo-400 ring-offset-2' : 'bg-slate-50 hover:bg-slate-100'}`}>
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3 min-w-0">
@@ -195,6 +197,11 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match, roundIdx }) => {
               <span className="text-[9px] font-bold text-indigo-200 flex items-center gap-1 uppercase tracking-widest">
                 <Crown size={8} fill="currentColor" /> Winner
               </span>
+            )}
+            {!isWinner && team?.captainName && (
+               <Badge variant="amber" size="xs" className="mt-0.5 self-start">
+                 {team.captainName} (C)
+               </Badge>
             )}
           </div>
         </div>
@@ -213,7 +220,7 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match, roundIdx }) => {
 
       {(goals.length > 0 || assists.length > 0) && (
         <div className="mt-3 pt-3 border-t border-black/5 space-y-2 animate-in slide-in-from-top-2 duration-300">
-           {goals.map((_: any, i: number) => (
+           {goals.map((_: string, i: number) => (
              <div key={i} className="grid grid-cols-2 gap-2">
                 <div className="relative">
                    <select 
@@ -222,7 +229,11 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match, roundIdx }) => {
                       className={`w-full p-2 rounded-lg bg-black/5 text-[9px] font-black outline-none border-none appearance-none ${isWinner ? 'text-white' : 'text-slate-700'}`}
                     >
                       <option value="">GOL...</option>
-                      {team?.players.map((p: string) => <option key={p} value={p}>{p}</option>)}
+                      {team?.players.map((p: string) => (
+                        <option key={p} value={p}>
+                          {p === team.captainName ? `★ ${p} (C)` : p}
+                        </option>
+                      ))}
                    </select>
                 </div>
                 <div className="relative">
@@ -232,7 +243,11 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match, roundIdx }) => {
                       className={`w-full p-2 rounded-lg bg-black/5 text-[9px] font-black outline-none border-none appearance-none ${isWinner ? 'text-white' : 'text-slate-700'}`}
                     >
                       <option value="">ASSIST...</option>
-                      {team?.players.map((p: string) => <option key={p} value={p}>{p}</option>)}
+                      {team?.players.map((p: string) => (
+                        <option key={p} value={p}>
+                          {p === team.captainName ? `★ ${p} (C)` : p}
+                        </option>
+                      ))}
                    </select>
                 </div>
              </div>
@@ -300,12 +315,16 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match, roundIdx }) => {
                           className="flex-1 bg-transparent text-[10px] font-bold border-none outline-none appearance-none"
                         >
                           <option value="">O'yinchi tanlang...</option>
-                          {homeTeam?.players.map(p => <option key={p} value={p}>{p}</option>)}
+                          {homeTeam?.players.map(p => (
+                            <option key={p} value={p}>
+                              {p === homeTeam.captainName ? `★ ${p} (C)` : p}
+                            </option>
+                          ))}
                         </select>
                         <button onClick={() => removeCard(homeYellows, setHomeYellows, i)} className="p-1 hover:bg-rose-50 text-slate-300 hover:text-rose-500 rounded-lg transition-colors"><X size={14}/></button>
                      </div>
                    ))}
-                   {/* Similar logic for other types if needed, simplified for brevity as per existing pattern */}
+                   {/* Similar logic for other types if needed */}
                 </div>
              </div>
            )}
@@ -353,8 +372,6 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match, roundIdx }) => {
         )}
       </div>
 
-      {/* Background Decorative Element */}
-      {/* Fix: Using match.winnerTeamId instead of isWinner which was undefined */}
       {match.winnerTeamId && (
         <div className="absolute -bottom-4 -right-4 opacity-[0.03] pointer-events-none rotate-12 scale-150">
            <Trophy size={120} />

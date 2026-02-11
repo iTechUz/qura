@@ -1,10 +1,12 @@
 
 import React from 'react';
-import { NavLink, Outlet } from 'react-router-dom';
-import { Trophy, Users, LayoutDashboard, Share2, Menu, Bell, BarChart3 } from 'lucide-react';
+import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { Trophy, Users, LayoutDashboard, Share2, Menu, Bell, BarChart3, ArrowLeft } from 'lucide-react';
 
 export const Layout: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const navItems = [
     { to: '/', icon: <LayoutDashboard size={20} />, label: 'Dashboard' },
@@ -15,6 +17,7 @@ export const Layout: React.FC = () => {
   ];
 
   const closeSidebar = () => setIsSidebarOpen(false);
+  const isHome = location.pathname === '/';
 
   return (
     <div className="min-h-screen flex bg-slate-50/50">
@@ -71,11 +74,22 @@ export const Layout: React.FC = () => {
              <button onClick={() => setIsSidebarOpen(true)} className="p-2 hover:bg-slate-100 rounded-lg text-slate-500 lg:hidden">
                 <Menu size={20} />
              </button>
-             <h2 className="text-sm font-bold text-slate-700 hidden sm:block">Tournament Manager Pro</h2>
+             
+             {!isHome && (
+               <button 
+                 onClick={() => navigate(-1)} 
+                 className="flex items-center gap-2 px-3 py-1.5 hover:bg-slate-50 rounded-xl text-slate-600 transition-all border border-transparent hover:border-slate-100 group"
+               >
+                 <ArrowLeft size={18} className="group-hover:-translate-x-0.5 transition-transform" />
+                 <span className="text-xs font-bold uppercase tracking-wider hidden sm:block">Ortga</span>
+               </button>
+             )}
+             
+             {isHome && <h2 className="text-sm font-bold text-slate-700 hidden sm:block">Tournament Manager Pro</h2>}
           </div>
           
           <div className="flex items-center gap-3">
-             <button className="p-2 text-slate-400 hover:text-slate-600 rounded-lg">
+             <button className="p-2 text-slate-400 hover:text-slate-600 rounded-lg transition-colors">
                 <Bell size={20} />
              </button>
              <div className="h-8 w-px bg-slate-200 mx-1"></div>

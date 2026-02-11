@@ -34,6 +34,7 @@ export interface Team {
   id: string;
   name: string;
   players: string[];
+  captainName?: string; // Jamoa sardori nomi
 }
 
 export interface Tournament {

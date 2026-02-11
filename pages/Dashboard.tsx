@@ -15,7 +15,9 @@ import {
   Zap, 
   Star,
   ChevronRight,
-  Target
+  Target,
+  X,
+  PlusCircle
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getTournamentStats } from '../utils';
@@ -47,7 +49,14 @@ export const Dashboard: React.FC = () => {
           
           <div className="pt-8">
             {isCreating ? (
-              <Card className="text-left border-indigo-100 shadow-xl" variant="premium">
+              <Card className="text-left border-indigo-100 shadow-xl relative animate-in zoom-in duration-300" variant="premium">
+                <button 
+                  onClick={() => setIsCreating(false)} 
+                  className="absolute top-4 right-4 p-2 hover:bg-slate-100 rounded-full text-slate-400 transition-colors"
+                  title="Bekor qilish"
+                >
+                  <X size={20} />
+                </button>
                 <form onSubmit={handleCreate} className="space-y-6">
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Turnir nomi</label>
@@ -77,14 +86,16 @@ export const Dashboard: React.FC = () => {
                     </div>
                   </div>
                   <div className="flex gap-3 pt-2">
-                    <Button type="submit" className="flex-1 py-3">Yaratish</Button>
-                    <Button type="button" variant="ghost" onClick={() => setIsCreating(false)} className="px-6">Bekor qilish</Button>
+                    <Button type="submit" className="flex-1 py-4 text-base">Yaratish</Button>
+                    <Button type="button" variant="secondary" onClick={() => setIsCreating(false)} className="px-6 font-bold text-slate-500">
+                      Bekor qilish
+                    </Button>
                   </div>
                 </form>
               </Card>
             ) : (
-              <Button onClick={() => setIsCreating(true)} size="lg" className="px-10 py-4 text-lg rounded-2xl shadow-xl">
-                <Plus size={20} className="mr-2" /> Yangi Turnir Boshlash
+              <Button onClick={() => setIsCreating(true)} size="lg" className="px-10 py-4 text-lg rounded-2xl shadow-xl hover:scale-105 transition-transform">
+                <PlusCircle size={20} className="mr-2" /> Yangi Turnir Boshlash
               </Button>
             )}
           </div>
@@ -114,7 +125,7 @@ export const Dashboard: React.FC = () => {
            <Button variant="secondary" size="sm" className="rounded-xl font-bold" onClick={() => navigate('/export')}>
              <Zap size={16} className="mr-2" /> Export
            </Button>
-           <Button variant="outline" size="sm" className="rounded-xl text-rose-500 border-rose-100 hover:bg-rose-50" onClick={() => { if(confirm('Haqiqatdan turnirni yopmoqchimisiz?')) resetTournament() }}>
+           <Button variant="outline" size="sm" className="rounded-xl text-rose-500 border-rose-100 hover:bg-rose-50" onClick={() => { if(confirm('Haqiqatdan turnirni butunlay yopmoqchimisiz? Barcha natijalar o\'chadi.')) resetTournament() }}>
              Turnirni yopish
            </Button>
         </div>
@@ -207,23 +218,6 @@ export const Dashboard: React.FC = () => {
           </div>
         </button>
       </div>
-
-      {rounds.length === 0 && teams.length >= 2 && (
-        <Card className="bg-indigo-50/50 border-indigo-100 flex flex-col sm:flex-row items-center justify-between gap-6" variant="flat">
-          <div className="flex items-center gap-4">
-             <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-indigo-600 shadow-sm shrink-0">
-                <Zap size={24} fill="currentColor" />
-             </div>
-             <div>
-                <h4 className="font-bold text-slate-900">Tayyormisiz?</h4>
-                <p className="text-sm text-slate-500">Tarkiblar shakllantirildi, pley-offga start berish mumkin.</p>
-             </div>
-          </div>
-          <Button size="lg" className="rounded-xl whitespace-nowrap" onClick={() => navigate('/bracket')}>
-            Turnirni Boshlash <ArrowUpRight size={18} className="ml-2" />
-          </Button>
-        </Card>
-      )}
     </div>
   );
 };

@@ -4,20 +4,21 @@ import { useNavigate } from 'react-router-dom';
 import { useTournamentStore } from '../store';
 import { Card } from '../shared/ui/Card';
 import { Button } from '../shared/ui/Button';
+import { Badge } from '../shared/ui/Badge';
 import { 
   Plus, 
   X, 
   Trash2, 
   Users, 
-  UserPlus, 
-  Info, 
   Sparkles, 
   CheckCircle2, 
-  ArrowRight 
+  ArrowRight,
+  Star,
+  Crown
 } from 'lucide-react';
 
 export const Teams: React.FC = () => {
-  const { tournament, teams, addTeam, seedTeams, removeTeam, updateTeamPlayers, rounds } = useTournamentStore();
+  const { tournament, teams, addTeam, seedTeams, removeTeam, updateTeamPlayers, setTeamCaptain, rounds } = useTournamentStore();
   const navigate = useNavigate();
   const [newTeamName, setNewTeamName] = React.useState('');
   const [activePlayerInputs, setActivePlayerInputs] = React.useState<Record<string, string>>({});
@@ -39,7 +40,11 @@ export const Teams: React.FC = () => {
     if (!team || team.players.length >= tournament.playersPerTeam) return;
 
     if (!team.players.includes(playerName.trim())) {
-      updateTeamPlayers(teamId, [...team.players, playerName.trim()]);
+      const nextPlayers = [...team.players, playerName.trim()];
+      updateTeamPlayers(teamId, nextPlayers);
+      if (!team.captainName) {
+        setTeamCaptain(teamId, playerName.trim());
+      }
     }
     setActivePlayerInputs(prev => ({ ...prev, [teamId]: '' }));
   };
@@ -47,7 +52,12 @@ export const Teams: React.FC = () => {
   const removePlayer = (teamId: string, playerName: string) => {
     const team = teams.find(t => t.id === teamId);
     if (!team) return;
-    updateTeamPlayers(teamId, team.players.filter(p => p !== playerName));
+    const nextPlayers = team.players.filter(p => p !== playerName);
+    updateTeamPlayers(teamId, nextPlayers);
+    
+    if (team.captainName === playerName) {
+      setTeamCaptain(teamId, nextPlayers[0] || '');
+    }
   };
 
   const isTournamentStarted = rounds.length > 0;
@@ -113,9 +123,16 @@ export const Teams: React.FC = () => {
                           {team.name}
                           {isFull && <CheckCircle2 size={16} className="text-green-500" />}
                         </h3>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                          {team.players.length} / {tournament.playersPerTeam} O'yinchi
-                        </p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                            {team.players.length} / {tournament.playersPerTeam} O'yinchi
+                          </p>
+                          {team.captainName && (
+                            <Badge variant="amber" size="xs" icon={<Crown size={8} fill="currentColor" />}>
+                              Sardor: {team.captainName}
+                            </Badge>
+                          )}
+                        </div>
                      </div>
                   </div>
                   {!isTournamentStarted && (
@@ -143,16 +160,32 @@ export const Teams: React.FC = () => {
                   )}
 
                   <div className="flex flex-wrap gap-2">
-                    {team.players.map(player => (
-                      <div key={player} className="group flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-100 rounded-lg text-xs font-bold shadow-sm">
-                        <span className="text-slate-700">{player}</span>
-                        {!isTournamentStarted && (
-                          <button onClick={() => removePlayer(team.id, player)} className="text-slate-300 hover:text-rose-500">
-                            <X size={14} />
-                          </button>
-                        )}
-                      </div>
-                    ))}
+                    {team.players.map(player => {
+                      const isCaptain = team.captainName === player;
+                      return (
+                        <div 
+                          key={player} 
+                          className={`group flex items-center gap-2 px-3 py-1.5 border rounded-lg text-xs font-bold shadow-sm transition-all relative overflow-hidden
+                          ${isCaptain ? 'bg-amber-50 border-amber-300 text-amber-900 ring-2 ring-amber-100 ring-offset-1' : 'bg-white border-slate-100 text-slate-700'}`}
+                        >
+                          {isCaptain && <div className="absolute top-0 right-0 w-8 h-8 bg-amber-200/20 rounded-full -mr-3 -mt-3 blur-sm"></div>}
+                          {isCaptain && <Star size={12} fill="currentColor" className="text-amber-500 relative z-10" />}
+                          <span className="relative z-10">{player}</span>
+                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-1 relative z-10">
+                            {!isCaptain && !isTournamentStarted && (
+                              <button onClick={() => setTeamCaptain(team.id, player)} title="Sardor qilish" className="p-1 hover:bg-amber-100 rounded text-amber-500">
+                                <Star size={12} />
+                              </button>
+                            )}
+                            {!isTournamentStarted && (
+                              <button onClick={() => removePlayer(team.id, player)} title="O'chirish" className="p-1 hover:bg-rose-100 rounded text-rose-300 hover:text-rose-500">
+                                <X size={12} />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
                     {team.players.length === 0 && (
                       <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider py-2 italic">Tarkib bo'sh...</p>
                     )}
