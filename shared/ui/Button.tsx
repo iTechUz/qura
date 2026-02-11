@@ -3,7 +3,7 @@ import React from 'react';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'danger' | 'ghost' | 'outline' | 'glass';
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg' | 'xl';
   loading?: boolean;
 }
 
@@ -15,7 +15,7 @@ export const Button: React.FC<ButtonProps> = ({
   className = '', 
   ...props 
 }) => {
-  const baseStyles = "inline-flex items-center justify-center font-bold rounded-xl transition-all duration-200 active:scale-95 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden";
+  const baseStyles = "inline-flex items-center justify-center font-bold transition-all duration-200 active:scale-95 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden shrink-0";
   
   const variants = {
     primary: "bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-indigo-500 shadow-sm",
@@ -27,9 +27,10 @@ export const Button: React.FC<ButtonProps> = ({
   };
 
   const sizes = {
-    sm: "h-8 px-3 text-[11px] uppercase tracking-wider",
-    md: "h-10 px-5 text-sm",
-    lg: "h-12 px-8 text-base"
+    sm: "h-8 px-3 text-[10px] uppercase tracking-wider rounded-lg",
+    md: "h-10 px-5 text-sm rounded-xl",
+    lg: "h-12 px-8 text-base rounded-xl",
+    xl: "h-14 px-10 text-lg font-black rounded-2xl"
   };
 
   return (
@@ -46,7 +47,7 @@ export const Button: React.FC<ButtonProps> = ({
           </svg>
         </span>
       )}
-      <span className={loading ? 'opacity-0' : 'flex items-center gap-2'}>
+      <span className={`${loading ? 'opacity-0' : 'flex items-center gap-2'}`}>
         {children}
       </span>
     </button>

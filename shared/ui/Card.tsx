@@ -20,12 +20,12 @@ export const Card: React.FC<CardProps> = ({ children, className = '', title, des
   return (
     <div className={`${variants[variant]} overflow-hidden transition-all duration-300 hover:shadow-md ${className}`}>
       {title && (
-        <div className="px-6 py-5 border-b border-slate-100">
-          <h3 className="text-base font-bold text-slate-900 leading-none">{title}</h3>
-          {description && <p className="text-xs text-slate-500 mt-2 font-medium leading-relaxed">{description}</p>}
+        <div className="px-5 py-4 border-b border-slate-100/50">
+          <h3 className="text-sm font-black text-slate-900 leading-tight uppercase italic">{title}</h3>
+          {description && <p className="text-[10px] text-slate-500 mt-1 font-bold uppercase tracking-wider">{description}</p>}
         </div>
       )}
-      <div className="p-6">
+      <div className="p-5">
         {children}
       </div>
     </div>
