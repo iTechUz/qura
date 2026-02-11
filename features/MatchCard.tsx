@@ -19,7 +19,9 @@ import {
   Info,
   Plus,
   Minus,
-  Target
+  Target,
+  User,
+  ShieldAlert
 } from 'lucide-react';
 
 interface MatchCardProps {
@@ -48,7 +50,6 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match, roundIdx }) => {
   const [showDetails, setShowDetails] = React.useState(false);
   const [showConfirmReset, setShowConfirmReset] = React.useState(false);
   const [isUpdating, setIsUpdating] = React.useState(false);
-  const [justFinished, setJustFinished] = React.useState(false);
   const [winnerAnimate, setWinnerAnimate] = React.useState(false);
 
   React.useEffect(() => {
@@ -64,7 +65,6 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match, roundIdx }) => {
     setAwayRedCards(match.awayRedCards || []);
   }, [match]);
 
-  // Winner transition animation effect
   React.useEffect(() => {
     if (match.winnerTeamId) {
       setWinnerAnimate(true);
@@ -124,10 +124,6 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match, roundIdx }) => {
     }
   };
 
-  const removeCard = (list: string[], setList: (l: string[]) => void, index: number) => {
-    setList(list.filter((_, i) => i !== index));
-  };
-
   const handleSave = () => {
     if (!isLastRound && isFinished && !showConfirmReset) {
       setShowConfirmReset(true);
@@ -161,136 +157,127 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match, roundIdx }) => {
       });
       setIsUpdating(false);
       setShowConfirmReset(false);
-      setJustFinished(true);
-      setTimeout(() => setJustFinished(false), 2000);
+      setShowDetails(false);
     }, 400);
   };
 
-  const handleManualWinner = (id: string) => {
-    if (!isLastRound && isFinished && !showConfirmReset) { setShowConfirmReset(true); return; }
-    if (!isLastRound && isFinished) resetDownstream(roundIdx);
-    updateMatch(roundIdx, match.id, { winnerTeamId: id, status: 'finished' });
-    setShowConfirmReset(false);
-    setJustFinished(true);
-    setTimeout(() => setJustFinished(false), 2000);
-  };
-
-  if (isBye) {
-    return (
-      <Card className="bg-slate-50 border-2 border-dashed border-indigo-200 rounded-2xl p-6 text-center group hover:bg-indigo-50/30 transition-all duration-300">
-        <div className="relative mb-4 inline-flex">
-          <div className="absolute inset-0 bg-indigo-200 blur-lg opacity-40 group-hover:opacity-100 transition-opacity"></div>
-          <div className="relative w-12 h-12 bg-white rounded-full flex items-center justify-center text-indigo-600 shadow-sm border border-indigo-100">
-            <FastForward size={24} />
-          </div>
-        </div>
-        <h4 className="font-black text-slate-900 tracking-tight text-lg">{homeTeam?.name.toUpperCase()}</h4>
-        <div className="mt-2 flex items-center justify-center gap-2">
-          <span className="h-px w-4 bg-indigo-200"></span>
-          <span className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em]">Keyingi bosqichda</span>
-          <span className="h-px w-4 bg-indigo-200"></span>
-        </div>
-      </Card>
-    );
-  }
-
-  const homeWinner = match.winnerTeamId === match.homeTeamId;
-  const awayWinner = match.winnerTeamId === match.awayTeamId;
-
-  const TeamRow = ({ team, score, side, isWinner, goals, assists }: { team: Team | undefined, score: number, side: 'home' | 'away', isWinner: boolean, goals: string[], assists: string[] }) => (
-    <div className={`relative p-3 rounded-2xl transition-all duration-500 ${isWinner ? `bg-indigo-600 text-white shadow-[0_10px_30px_rgba(79,70,229,0.3)] ring-2 ring-indigo-400 ring-offset-2 ${winnerAnimate ? 'animate-pulse scale-[1.05]' : 'scale-[1.02]'}` : 'bg-slate-50 hover:bg-slate-100'} ${justFinished && isWinner ? 'animate-in zoom-in-95 fade-in duration-500' : ''}`}>
+  const TeamRow = ({ team, score, isWinner }: { team: Team | undefined, score: number, isWinner: boolean }) => (
+    <div className={`p-3 rounded-2xl transition-all duration-300 ${isWinner ? `bg-indigo-600 text-white shadow-lg ${winnerAnimate ? 'scale-105' : ''}` : 'bg-slate-50'}`}>
       <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-[10px] shrink-0 italic ${isWinner ? 'bg-white/20' : 'bg-slate-200 text-slate-500'}`}>
+        <div className="flex items-center gap-2 truncate">
+          <div className={`w-7 h-7 rounded-lg flex items-center justify-center font-black text-[10px] shrink-0 ${isWinner ? 'bg-white/20' : 'bg-slate-200 text-slate-500'}`}>
             {team?.name.charAt(0).toUpperCase()}
           </div>
-          <span className="font-black text-xs uppercase italic truncate pr-1">{team?.name}</span>
+          <span className="font-black text-xs uppercase italic truncate">{team?.name}</span>
         </div>
-        <div className="flex items-center gap-3 shrink-0">
-           {isWinner && <Crown size={16} fill="currentColor" className="text-amber-300 animate-bounce" />}
-           <span className="text-xl font-black italic tabular-nums">{score}</span>
+        <div className="flex items-center gap-2">
+           {isWinner && <Crown size={14} fill="currentColor" className="text-amber-300" />}
+           <span className="text-lg font-black italic tabular-nums">{score}</span>
         </div>
       </div>
     </div>
   );
 
+  const ScorerInput = ({ label, count, players, values, onChange }: any) => {
+    if (count === 0) return null;
+    return (
+      <div className="space-y-2">
+        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{label}</p>
+        <div className="grid grid-cols-1 gap-2">
+          {Array.from({ length: count }).map((_, i) => (
+            <select
+              key={i}
+              value={values[i] || ""}
+              onChange={(e) => onChange(i, e.target.value)}
+              className="w-full h-9 px-3 rounded-lg border border-slate-200 bg-white text-[11px] font-bold outline-none focus:border-indigo-500 transition-all"
+            >
+              <option value="">O'yinchini tanlang</option>
+              {players.map((p: string) => <option key={p} value={p}>{p}</option>)}
+            </select>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  if (isBye) return (
+    <Card className="bg-slate-50 border-2 border-dashed border-indigo-200 rounded-2xl p-6 text-center">
+      <FastForward size={24} className="mx-auto text-indigo-400 mb-2" />
+      <h4 className="font-black text-slate-900 tracking-tight">{homeTeam?.name.toUpperCase()}</h4>
+      <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest mt-1">Avtomatik o'tdi</p>
+    </Card>
+  );
+
   return (
-    <Card className={`relative overflow-hidden p-0 border-slate-200 shadow-sm hover:shadow-lg transition-all duration-300 group ${isFinished ? 'border-indigo-100' : ''}`}>
-      <div className="p-5 space-y-3">
-        <TeamRow team={homeTeam} score={match.scoreHome || 0} side="home" isWinner={homeWinner} goals={homeGoals} assists={homeAssists} />
-        <div className="flex items-center justify-center gap-3 py-1">
+    <Card className="p-0 overflow-hidden border-slate-200 shadow-sm hover:shadow-md transition-all">
+      <div className="p-4 space-y-2">
+        <TeamRow team={homeTeam} score={match.scoreHome || 0} isWinner={match.winnerTeamId === match.homeTeamId} />
+        <div className="flex items-center justify-center gap-2 py-0.5">
            <div className="flex-1 h-px bg-slate-100"></div>
-           <div className="w-8 h-8 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-[10px] font-black italic text-slate-300">VS</div>
+           <span className="text-[9px] font-black text-slate-300">VS</span>
            <div className="flex-1 h-px bg-slate-100"></div>
         </div>
-        <TeamRow team={awayTeam} score={match.scoreAway || 0} side="away" isWinner={awayWinner} goals={awayGoals} assists={awayAssists} />
+        <TeamRow team={awayTeam} score={match.scoreAway || 0} isWinner={match.winnerTeamId === match.awayTeamId} />
 
-        {/* Action Bar */}
-        <div className="pt-4 flex items-center justify-between gap-3">
-           <button 
-             onClick={() => setShowDetails(!showDetails)}
-             className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all"
-           >
-             {showDetails ? <ChevronUp size={14} /> : <ChevronDown size={14} />} 
-             {showDetails ? 'YASHIRISH' : 'NATIJA KIRITISH'}
+        <div className="pt-3 flex items-center justify-between">
+           <button onClick={() => setShowDetails(!showDetails)} className="flex items-center gap-2 text-[10px] font-black uppercase text-slate-400 hover:text-indigo-600 transition-colors">
+              {showDetails ? <ChevronUp size={14} /> : <ChevronDown size={14} />} 
+              {showDetails ? 'Yashirish' : 'Natija va Scorers'}
            </button>
-           {isFinished && (
-             <Badge variant="indigo" size="xs" className="italic px-3">TUGALLANDI</Badge>
-           )}
+           {isFinished && <Badge variant="indigo" size="xs">Tugallandi</Badge>}
         </div>
       </div>
 
-      {/* Detail Panel */}
       {showDetails && (
-        <div className="border-t border-slate-100 bg-slate-50/50 p-5 space-y-6 animate-in slide-in-from-top-2 duration-300">
+        <div className="p-5 border-t border-slate-100 bg-slate-50/50 space-y-6 animate-in slide-in-from-top-2">
            {showConfirmReset && (
-             <div className="p-4 bg-rose-50 border border-rose-100 rounded-xl space-y-3">
-                <div className="flex items-center gap-2 text-rose-600 text-[10px] font-black uppercase tracking-widest">
-                   <AlertCircle size={16} /> DIQQAT!
-                </div>
-                <p className="text-[11px] text-rose-500 font-bold leading-relaxed">Natijani o'zgartirish keyingi barcha bosqichlarni o'chirib yuboradi. Davom etasizmi?</p>
+             <div className="p-3 bg-rose-50 border border-rose-100 rounded-xl text-center space-y-2">
+                <p className="text-[10px] text-rose-600 font-bold uppercase tracking-tight">Keyingi bosqichlar o'chib ketadi!</p>
                 <div className="flex gap-2">
-                   <Button size="sm" variant="danger" className="flex-1 rounded-lg" onClick={handleSave}>HA, O'ZGARTIRISH</Button>
-                   <Button size="sm" variant="secondary" className="flex-1 rounded-lg" onClick={() => setShowConfirmReset(false)}>BEKOR QILISH</Button>
+                   <Button size="sm" variant="danger" className="flex-1" onClick={handleSave}>Ha, o'zgartir</Button>
+                   <Button size="sm" variant="secondary" className="flex-1" onClick={() => setShowConfirmReset(false)}>Bekor</Button>
                 </div>
              </div>
            )}
 
-           <div className="space-y-4">
-              <div className="flex items-center justify-between text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">
-                 <span>Hisobni yangilash</span>
-                 <Target size={14} />
+           <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-4">
+                 <div className="flex items-center justify-between bg-white p-2 rounded-xl border border-slate-100">
+                    <button onClick={() => handleScoreChange('home', scoreHome - 1)} className="p-2 text-slate-300 hover:text-rose-500"><Minus size={16} /></button>
+                    <span className="text-xl font-black italic">{scoreHome}</span>
+                    <button onClick={() => handleScoreChange('home', scoreHome + 1)} className="p-2 text-indigo-500 hover:scale-110"><Plus size={16} /></button>
+                 </div>
+                 <ScorerInput label="Gollar" count={scoreHome} players={homeTeam?.players || []} values={homeGoals} onChange={(idx: number, val: string) => updateScorer(homeGoals, setHomeGoals, idx, val)} />
+                 <ScorerInput label="Assistlar" count={scoreHome} players={homeTeam?.players || []} values={homeAssists} onChange={(idx: number, val: string) => updateScorer(homeAssists, setHomeAssists, idx, val)} />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+
+              <div className="space-y-4">
                  <div className="flex items-center justify-between bg-white p-2 rounded-xl border border-slate-100">
-                    <button onClick={() => handleScoreChange('home', scoreHome - 1)} className="p-2 hover:bg-slate-50 rounded-lg text-slate-400"><Minus size={16} /></button>
-                    <span className="text-2xl font-black italic">{scoreHome}</span>
-                    <button onClick={() => handleScoreChange('home', scoreHome + 1)} className="p-2 hover:bg-slate-50 rounded-lg text-indigo-600"><Plus size={16} /></button>
+                    <button onClick={() => handleScoreChange('away', scoreAway - 1)} className="p-2 text-slate-300 hover:text-rose-500"><Minus size={16} /></button>
+                    <span className="text-xl font-black italic">{scoreAway}</span>
+                    <button onClick={() => handleScoreChange('away', scoreAway + 1)} className="p-2 text-rose-500 hover:scale-110"><Plus size={16} /></button>
                  </div>
-                 <div className="flex items-center justify-between bg-white p-2 rounded-xl border border-slate-100">
-                    <button onClick={() => handleScoreChange('away', scoreAway - 1)} className="p-2 hover:bg-slate-50 rounded-lg text-slate-400"><Minus size={16} /></button>
-                    <span className="text-2xl font-black italic">{scoreAway}</span>
-                    <button onClick={() => handleScoreChange('away', scoreAway + 1)} className="p-2 hover:bg-slate-50 rounded-lg text-rose-500"><Plus size={16} /></button>
-                 </div>
+                 <ScorerInput label="Gollar" count={scoreAway} players={awayTeam?.players || []} values={awayGoals} onChange={(idx: number, val: string) => updateScorer(awayGoals, setAwayGoals, idx, val)} />
+                 <ScorerInput label="Assistlar" count={scoreAway} players={awayTeam?.players || []} values={awayAssists} onChange={(idx: number, val: string) => updateScorer(awayAssists, setAwayAssists, idx, val)} />
               </div>
            </div>
 
            {scoreHome === scoreAway && scoreHome > 0 && (
-             <div className="space-y-3 pt-2">
-                <p className="text-[9px] font-black text-center text-slate-400 uppercase tracking-widest italic">Durang! G'olibni tanlang:</p>
+             <div className="text-center space-y-2">
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest italic">Durang! G'olibni tanlang:</p>
                 <div className="flex gap-2">
-                   <Button variant={match.winnerTeamId === match.homeTeamId ? 'primary' : 'outline'} size="sm" className="flex-1 rounded-lg" onClick={() => handleManualWinner(match.homeTeamId)}>
+                   <Button variant={match.winnerTeamId === match.homeTeamId ? 'primary' : 'outline'} size="sm" className="flex-1 rounded-lg" onClick={() => updateMatch(roundIdx, match.id, { winnerTeamId: match.homeTeamId })}>
                       {homeTeam?.name}
                    </Button>
-                   <Button variant={match.winnerTeamId === match.awayTeamId ? 'primary' : 'outline'} size="sm" className="flex-1 rounded-lg" onClick={() => awayTeam ? handleManualWinner(awayTeam.id) : null}>
+                   <Button variant={match.winnerTeamId === match.awayTeamId ? 'primary' : 'outline'} size="sm" className="flex-1 rounded-lg" onClick={() => awayTeam && updateMatch(roundIdx, match.id, { winnerTeamId: awayTeam.id })}>
                       {awayTeam?.name}
                    </Button>
                 </div>
              </div>
            )}
 
-           <Button className="w-full rounded-xl h-11 font-black text-xs uppercase tracking-[0.2em]" loading={isUpdating} onClick={handleSave}>
-              SAQLASH VA TASDIQLASH
+           <Button className="w-full rounded-xl h-11 font-black text-xs uppercase tracking-widest" loading={isUpdating} onClick={handleSave}>
+              NATIJANI SAQLASH
            </Button>
         </div>
       )}
