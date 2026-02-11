@@ -23,17 +23,37 @@ import {
   Flame,
   Calendar,
   Undo2,
-  ChevronLeft
+  ChevronLeft,
+  Crown
 } from 'lucide-react';
-import { Team, Round, Match } from '../types';
+// Added Tournament to the imports
+import { Team, Round, Match, Tournament } from '../types';
 
-type Stage = 'intro' | 'picking_home' | 'ball_shaking_home' | 'revealing_home' | 'picking_away' | 'ball_shaking_away' | 'revealing_away' | 'match_slam' | 'summary';
+type Stage = 'intro' | 'countdown' | 'picking_home' | 'ball_shaking_home' | 'revealing_home' | 'picking_away' | 'ball_shaking_away' | 'revealing_away' | 'match_slam' | 'summary';
+
+const Particle: React.FC<{ color?: string }> = ({ color = "white" }) => {
+  const x = Math.random() * 400 - 200;
+  const y = Math.random() * 400 - 200;
+  return (
+    <div 
+      className="absolute animate-particle rounded-full pointer-events-none"
+      style={{ 
+        width: Math.random() * 8 + 4 + 'px', 
+        height: Math.random() * 8 + 4 + 'px', 
+        backgroundColor: color,
+        '--tw-translate-x': `${x}px`,
+        '--tw-translate-y': `${y}px`
+      } as any}
+    />
+  );
+};
 
 const DrawCeremony: React.FC<{ teams: Team[], onComplete: () => void, onCancel: () => void }> = ({ teams, onComplete, onCancel }) => {
   const [currentStage, setCurrentStage] = React.useState<Stage>('intro');
+  const [countdown, setCountdown] = React.useState(3);
   const [matchResults, setMatchResults] = React.useState<Array<{ h: Team, a: Team | null }>>([]);
   const [currentPair, setCurrentPair] = React.useState<{ h: Team | null, a: Team | null }>({ h: null, a: null });
-  const [remainingTeams, setRemainingTeams] = React.useState<Team[]>([]);
+  const [particles, setParticles] = React.useState<number[]>([]);
   
   const pairs = React.useMemo(() => {
     const arr = [...teams].sort(() => Math.random() - 0.5);
@@ -44,35 +64,51 @@ const DrawCeremony: React.FC<{ teams: Team[], onComplete: () => void, onCancel: 
     return p;
   }, [teams]);
 
-  const startDraw = () => {
-    setRemainingTeams([...teams]);
-    setCurrentStage('picking_home');
+  // FIX: Define targetPair in component scope so it's accessible in JSX
+  const targetPair = pairs[matchResults.length];
+
+  const triggerParticles = () => {
+    setParticles(Array.from({ length: 15 }, (_, i) => Date.now() + i));
+    setTimeout(() => setParticles([]), 1500);
   };
 
   React.useEffect(() => {
     if (currentStage === 'intro') {
-        const t = setTimeout(startDraw, 1500);
+        const t = setTimeout(() => setCurrentStage('countdown'), 1500);
         return () => clearTimeout(t);
     }
-    const currentPairIdx = matchResults.length;
-    const targetPair = pairs[currentPairIdx];
-    if (!targetPair) {
-        if (currentStage !== 'summary') setCurrentStage('summary');
+    
+    if (currentStage === 'countdown') {
+        if (countdown > 0) {
+            const t = setTimeout(() => setCountdown(countdown - 1), 1000);
+            return () => clearTimeout(t);
+        } else {
+            setCurrentStage('picking_home');
+        }
+    }
+
+    if (!targetPair && currentStage !== 'intro' && currentStage !== 'countdown' && currentStage !== 'summary') {
+        setCurrentStage('summary');
         return;
     }
-    const timings = { picking: 1200, shaking: 1000, revealing: 1200, slam: 1200 };
+
+    const timings = { picking: 800, shaking: 1200, revealing: 1500, slam: 1200 };
+
     if (currentStage === 'picking_home') {
         const t = setTimeout(() => setCurrentStage('ball_shaking_home'), timings.picking);
         return () => clearTimeout(t);
     }
     if (currentStage === 'ball_shaking_home') {
-        const t = setTimeout(() => setCurrentStage('revealing_home'), timings.shaking);
+        const t = setTimeout(() => {
+            setCurrentStage('revealing_home');
+            triggerParticles();
+        }, timings.shaking);
         return () => clearTimeout(t);
     }
     if (currentStage === 'revealing_home') {
-        setCurrentPair({ h: targetPair.h, a: null });
+        if (!currentPair.h && targetPair) setCurrentPair({ h: targetPair.h, a: null });
         const t = setTimeout(() => {
-            if (targetPair.a) setCurrentStage('picking_away');
+            if (targetPair?.a) setCurrentStage('picking_away');
             else setCurrentStage('match_slam');
         }, timings.revealing);
         return () => clearTimeout(t);
@@ -82,67 +118,147 @@ const DrawCeremony: React.FC<{ teams: Team[], onComplete: () => void, onCancel: 
         return () => clearTimeout(t);
     }
     if (currentStage === 'ball_shaking_away') {
-        const t = setTimeout(() => setCurrentStage('revealing_away'), timings.shaking);
+        const t = setTimeout(() => {
+            setCurrentStage('revealing_away');
+            triggerParticles();
+        }, timings.shaking);
         return () => clearTimeout(t);
     }
     if (currentStage === 'revealing_away') {
-        setCurrentPair(prev => ({ ...prev, a: targetPair.a }));
+        if (!currentPair.a && targetPair) setCurrentPair(prev => ({ ...prev, a: targetPair.a }));
         const t = setTimeout(() => setCurrentStage('match_slam'), timings.revealing);
         return () => clearTimeout(t);
     }
     if (currentStage === 'match_slam') {
         const t = setTimeout(() => {
-            setMatchResults(prev => [...prev, targetPair]);
+            if (targetPair) setMatchResults(prev => [...prev, targetPair]);
             setCurrentPair({ h: null, a: null });
-            setRemainingTeams(prev => prev.filter(t => t.id !== targetPair.h.id && (targetPair.a ? t.id !== targetPair.a.id : true)));
             setCurrentStage('picking_home');
         }, timings.slam);
         return () => clearTimeout(t);
     }
-  }, [currentStage, matchResults.length, pairs]);
+  }, [currentStage, countdown, matchResults.length, pairs, targetPair, currentPair.h, currentPair.a]);
 
   return (
-    <div className="fixed inset-0 z-[100] bg-[#020617] text-white flex flex-col items-center justify-center p-4 scanline-effect overflow-hidden">
+    <div className={`fixed inset-0 z-[100] bg-[#020617] text-white flex flex-col items-center justify-center p-4 scanline-effect overflow-hidden transition-all duration-300 ${currentStage === 'match_slam' ? 'animate-screen-shake' : ''}`}>
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_#1e1b4b_0%,_#020617_70%)] opacity-60"></div>
       
+      {/* Dynamic Background Elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-20">
+         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] border border-white/10 rounded-full animate-spin" style={{ animationDuration: '20s' }}></div>
+         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1200px] h-[1200px] border border-white/5 rounded-full animate-spin" style={{ animationDuration: '40s', animationDirection: 'reverse' }}></div>
+      </div>
+
       <button 
         onClick={onCancel} 
         className="absolute top-10 left-10 z-[110] flex items-center gap-2 px-6 py-3 bg-white/10 hover:bg-white/20 rounded-2xl border border-white/20 transition-all text-xs font-black uppercase tracking-widest group"
       >
-        <ChevronLeft size={18} className="group-hover:-translate-x-0.5 transition-transform" /> Ortga qaytish
+        <ChevronLeft size={18} className="group-hover:-translate-x-0.5 transition-transform" /> Bekor qilish
       </button>
 
       <div className="relative z-10 w-full max-w-5xl flex flex-col items-center gap-16 text-center">
-         {(currentStage.startsWith('picking') || currentStage === 'intro' || currentStage.startsWith('ball_shaking')) && (
-           <div className="animate-in zoom-in fade-in duration-700 space-y-10">
-             <div className="w-56 h-56 bg-slate-900 border-2 border-indigo-500/50 rounded-full mx-auto flex items-center justify-center shadow-2xl relative">
-                <Dices size={100} className={`text-indigo-400 ${currentStage.startsWith('ball_shaking') ? 'animate-ball-shake' : 'animate-spin'}`} style={{ animationDuration: currentStage.startsWith('ball_shaking') ? '0.5s' : '4s' }} />
-             </div>
-             <h2 className="text-4xl font-black uppercase italic tracking-tighter">QURA BOSHLANMOQDA</h2>
+         
+         {currentStage === 'intro' && (
+           <div className="animate-in zoom-in fade-in duration-700 space-y-6">
+             <Trophy size={100} className="mx-auto text-amber-400 animate-bounce" />
+             <h2 className="text-6xl font-black uppercase italic tracking-tighter">TAYYORMISIZ?</h2>
            </div>
          )}
+
+         {currentStage === 'countdown' && (
+           <div key={countdown} className="animate-countdown">
+              <span className="text-[12rem] font-black italic text-indigo-500 drop-shadow-[0_0_50px_rgba(79,70,229,0.8)]">
+                {countdown > 0 ? countdown : 'GO!'}
+              </span>
+           </div>
+         )}
+
+         {(currentStage.startsWith('picking') || currentStage.startsWith('ball_shaking')) && (
+           <div className="animate-in zoom-in fade-in duration-700 space-y-10 relative">
+             <div className="w-64 h-64 bg-slate-900 border-4 border-indigo-500/50 rounded-full mx-auto flex items-center justify-center shadow-2xl relative overflow-hidden">
+                <div className="absolute inset-0 bg-indigo-500/10 animate-pulse"></div>
+                <Dices size={120} className={`text-indigo-400 z-10 ${currentStage.startsWith('ball_shaking') ? 'animate-ball-shake' : 'animate-spin'}`} style={{ animationDuration: currentStage.startsWith('ball_shaking') ? '0.3s' : '2s' }} />
+                {currentStage.startsWith('ball_shaking') && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-full h-full bg-white/20 blur-2xl animate-pulse"></div>
+                  </div>
+                )}
+             </div>
+             <h2 className="text-4xl font-black uppercase italic tracking-[0.2em] animate-pulse">
+                {currentStage.includes('home') ? 'UY EGASI...' : 'MEHMON...'}
+             </h2>
+           </div>
+         )}
+
          {(currentStage.includes('revealing') || currentStage === 'match_slam') && (
-            <div className="w-full flex items-center justify-center gap-16">
-               <div className={`flex-1 flex flex-col items-center gap-6 animate-reveal`}>
-                  <div className="w-64 h-64 bg-slate-900 border-4 border-indigo-500 rounded-[3rem] shadow-2xl flex flex-col items-center justify-center p-8">
-                     <span className="text-3xl font-black uppercase italic truncate w-full">{currentPair.h?.name}</span>
+            <div className="w-full flex items-center justify-center gap-8 lg:gap-16 relative">
+               
+               {/* Burst Effect on Reveal */}
+               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-0">
+                  <div className="w-20 h-20 bg-white rounded-full animate-burst"></div>
+               </div>
+
+               {/* Home Team */}
+               <div className={`flex-1 flex flex-col items-center gap-6 animate-reveal z-10`}>
+                  <div className={`w-64 h-64 bg-slate-900 border-4 rounded-[3rem] shadow-2xl flex flex-col items-center justify-center p-8 transition-all duration-500 ${currentPair.h ? 'border-emerald-500 bg-emerald-950/20' : 'border-indigo-500'}`}>
+                     {currentPair.h ? (
+                       <span className="text-4xl font-black uppercase italic tracking-tighter drop-shadow-md">{currentPair.h.name}</span>
+                     ) : (
+                       <div className="w-20 h-20 border-4 border-t-transparent border-indigo-500 rounded-full animate-spin"></div>
+                     )}
                   </div>
                </div>
-               <div className="shrink-0">
-                  {currentStage === 'match_slam' ? <div className="animate-slam bg-white text-black px-8 py-4 text-7xl font-black italic shadow-[0_0_40px_#fff]">VS</div> : <Swords size={48} className="text-white/20 animate-pulse scale-150" />}
+
+               {/* VS / SLAM */}
+               <div className="shrink-0 z-20">
+                  {currentStage === 'match_slam' ? (
+                    <div className="animate-slam bg-white text-black px-12 py-6 text-8xl font-black italic shadow-[0_0_80px_#fff] -rotate-3">VS</div>
+                  ) : (
+                    <div className="relative">
+                       <Swords size={60} className="text-white/20 animate-pulse scale-150 rotate-12" />
+                    </div>
+                  )}
                </div>
-               <div className={`flex-1 flex flex-col items-center gap-6 transition-opacity duration-500 ${currentPair.a ? 'opacity-100' : 'opacity-0'}`}>
-                  <div className="w-64 h-64 bg-slate-900 border-4 border-indigo-500 rounded-[3rem] shadow-2xl flex flex-col items-center justify-center p-8">
-                     <span className="text-3xl font-black uppercase italic truncate w-full">{currentPair.a?.name || 'BYE'}</span>
+
+               {/* Away Team */}
+               <div className={`flex-1 flex flex-col items-center gap-6 transition-all duration-500 z-10 ${currentStage.includes('revealing_away') || currentStage === 'match_slam' ? 'opacity-100' : 'opacity-0 scale-90'}`}>
+                  <div className={`w-64 h-64 bg-slate-900 border-4 rounded-[3rem] shadow-2xl flex flex-col items-center justify-center p-8 transition-all duration-500 ${currentPair.a ? 'border-rose-500 bg-rose-950/20' : 'border-indigo-500'}`}>
+                     {currentPair.a ? (
+                       <span className="text-4xl font-black uppercase italic tracking-tighter drop-shadow-md">{currentPair.a.name}</span>
+                     ) : (
+                       targetPair?.a === null ? (
+                        <span className="text-4xl font-black uppercase italic tracking-tighter text-slate-500">BYE</span>
+                       ) : (
+                        <div className="w-20 h-20 border-4 border-t-transparent border-indigo-500 rounded-full animate-spin"></div>
+                       )
+                     )}
                   </div>
                </div>
+
+               {/* Particle Effects */}
+               {particles.map(id => <Particle key={id} color={id % 2 === 0 ? '#4f46e5' : '#10b981'} />)}
             </div>
          )}
+
          {currentStage === 'summary' && (
             <div className="animate-in fade-in zoom-in duration-1000 w-full max-w-4xl space-y-12 text-center">
-               <h2 className="text-6xl font-black italic uppercase tracking-tighter">Qura Yakunlandi</h2>
-               <div className="flex flex-col sm:flex-row gap-4">
-                  <Button size="lg" onClick={onComplete} className="flex-1 h-24 rounded-[2rem] bg-white text-indigo-950 font-black text-3xl shadow-2xl">DAVOM ETISH</Button>
+               <div className="relative inline-block">
+                  <div className="absolute inset-0 bg-indigo-500 blur-[60px] opacity-30 animate-pulse"></div>
+                  <h2 className="text-7xl lg:text-8xl font-black italic uppercase tracking-tighter relative z-10">Qura Yakunlandi</h2>
+               </div>
+               
+               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {matchResults.map((m, i) => (
+                    <div key={i} className="bg-white/5 border border-white/10 p-4 rounded-2xl flex items-center justify-between font-bold italic uppercase tracking-tight">
+                       <span>{m.h.name}</span>
+                       <span className="text-indigo-400 px-2">VS</span>
+                       <span>{m.a?.name || 'BYE'}</span>
+                    </div>
+                  ))}
+               </div>
+
+               <div className="flex flex-col sm:flex-row gap-4 pt-6">
+                  <Button size="lg" onClick={onComplete} className="flex-1 h-24 rounded-[2rem] bg-indigo-600 hover:bg-indigo-700 text-white font-black text-3xl shadow-[0_20px_40px_rgba(79,70,229,0.4)] hover:scale-[1.02] transition-all">DAVOM ETISH</Button>
                   <Button variant="glass" size="lg" onClick={onCancel} className="px-10 h-24 rounded-[2rem] font-bold text-xl border-white/40">BEKOR QILISH</Button>
                </div>
             </div>
@@ -152,151 +268,83 @@ const DrawCeremony: React.FC<{ teams: Team[], onComplete: () => void, onCancel: 
   );
 };
 
-// PROFESSIONAL TOURNAMENT BRACKET POSTER (Soccer Field Aesthetic)
-const RoadmapPoster: React.FC<{ tournament: any, teams: Team[], rounds: Round[], id: string }> = ({ tournament, teams, rounds, id }) => {
-  const getTeamName = (id: string | null) => teams.find(t => t.id === id)?.name || '';
-
+// Added RoadmapPoster component to fix "Cannot find name 'RoadmapPoster'" error
+const RoadmapPoster: React.FC<{ tournament: Tournament, teams: Team[], rounds: Round[], id: string }> = ({ tournament, teams, rounds, id }) => {
+  const getTeamName = (id: string | null) => teams.find(t => t.id === id)?.name || 'N/A';
+  
   return (
-    <div 
-      id={id} 
-      className="w-[1280px] h-[800px] bg-[#065f46] flex flex-col items-center relative overflow-hidden text-white font-['Plus_Jakarta_Sans',_sans-serif]"
-    >
-      {/* Background Sunburst Effect */}
-      <div className="absolute inset-0 opacity-20 pointer-events-none" 
-           style={{ background: 'conic-gradient(from 180deg at 50% 110%, transparent 0deg, rgba(255,255,255,0.3) 10deg, transparent 20deg, rgba(255,255,255,0.3) 30deg, transparent 40deg, rgba(255,255,255,0.3) 50deg, transparent 60deg, rgba(255,255,255,0.3) 70deg, transparent 80deg, rgba(255,255,255,0.3) 90deg, transparent 100deg, rgba(255,255,255,0.3) 110deg, transparent 120deg, rgba(255,255,255,0.3) 130deg, transparent 140deg, rgba(255,255,255,0.3) 150deg, transparent 160deg, rgba(255,255,255,0.3) 170deg, transparent 180deg)' }}>
+    <div id={id} className="w-[1200px] h-[800px] bg-slate-950 p-12 text-white flex flex-col items-center justify-between relative overflow-hidden">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_#1e1b4b_0%,_#020617_70%)] opacity-60"></div>
+      <div className="relative z-10 text-center space-y-4">
+        <div className="flex items-center justify-center gap-4 mb-2">
+          <Trophy className="text-amber-400" size={48} />
+          <h1 className="text-6xl font-black uppercase italic tracking-tighter">{tournament.name}</h1>
+        </div>
+        <p className="text-indigo-400 font-bold uppercase tracking-[0.3em]">Turnir Jadvali / Roadmap</p>
       </div>
 
-      {/* Field Grass Texture Overlay */}
-      <div className="absolute inset-0 opacity-10 pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/grass.png')]"></div>
-      
-      {/* Field Arc (Bottom) */}
-      <div className="absolute -bottom-[200px] w-[1400px] h-[400px] bg-emerald-950/40 rounded-[100%] border-t-8 border-white/10"></div>
-
-      {/* Main Content */}
-      <div className="relative z-10 w-full h-full flex flex-col">
-        {/* Header */}
-        <header className="pt-12 text-center">
-           <h1 className="text-7xl font-[800] tracking-[0.1em] uppercase italic drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]">
-              TOURNAMENT BRACKET
-           </h1>
-           <p className="mt-2 text-xl font-bold tracking-[0.5em] text-emerald-200 uppercase opacity-80">
-              {tournament.name} • SEASON {new Date().getFullYear()}
-           </p>
-        </header>
-
-        {/* Dynamic Bracket with Connections */}
-        <main className="flex-1 flex items-center justify-between px-16 pb-12 gap-0 relative">
-          {rounds.map((round, rIdx) => {
-            const matchesCount = round.matches.length;
-            const columnWidth = 240; 
-            
-            return (
-              <React.Fragment key={rIdx}>
-                {/* Round Column */}
-                <div className="flex flex-col justify-around h-full relative z-20" style={{ width: columnWidth }}>
-                  {round.matches.map((match, mIdx) => {
-                    const isWinnerHome = match.winnerTeamId === match.homeTeamId;
-                    const isWinnerAway = match.winnerTeamId === match.awayTeamId;
-                    
-                    return (
-                      <div key={mIdx} className="relative flex items-center justify-center">
-                         {/* Match Box */}
-                         <div className="w-52 bg-slate-100 rounded-xl overflow-hidden border-2 border-white/20 shadow-2xl flex flex-col text-slate-900">
-                            <div className={`px-4 py-2.5 border-b border-slate-200 flex justify-between items-center ${isWinnerHome ? 'bg-emerald-100 ring-2 ring-emerald-500 ring-inset' : 'bg-white'}`}>
-                               <span className={`text-[13px] font-[800] uppercase truncate w-32 ${isWinnerHome ? 'text-emerald-700' : 'text-slate-800'}`}>{getTeamName(match.homeTeamId)}</span>
-                               <span className="text-[13px] font-black text-slate-400">{match.status === 'finished' ? (match.scoreHome ?? '-') : '-'}</span>
-                            </div>
-                            <div className={`px-4 py-2.5 flex justify-between items-center ${isWinnerAway ? 'bg-emerald-100 ring-2 ring-emerald-500 ring-inset' : 'bg-white'}`}>
-                               <span className={`text-[13px] font-[800] uppercase truncate w-32 ${isWinnerAway ? 'text-emerald-700' : 'text-slate-800'}`}>{getTeamName(match.awayTeamId) || 'BYE'}</span>
-                               <span className="text-[13px] font-black text-slate-400">{match.status === 'finished' ? (match.scoreAway ?? '-') : '-'}</span>
-                            </div>
-                         </div>
-
-                         {/* Mantiqiy bog'lovchi chiziqlar (Brackets Logic) */}
-                         {rIdx < rounds.length - 1 && (
-                            <div className="absolute left-[208px] w-[32px] h-full flex items-center">
-                               {/* O'yindan chiquvchi gorizontal chiziq */}
-                               <div className="absolute left-0 top-1/2 w-full h-[2px] bg-emerald-300 -translate-y-1/2"></div>
-                               
-                               {/* Vertikal chiziq va keyingi bosqichga kirish (Faqat har 2 tadan 1-o'yinda ko'rsatiladi) */}
-                               {mIdx % 2 === 0 && (
-                                  <div className="absolute left-full top-1/2 w-[2px] bg-emerald-300" style={{ height: `calc(${100 / (matchesCount/2)}%)` }}>
-                                     {/* Keyingi bosqichga kiruvchi gorizontal chiziq */}
-                                     <div className="absolute top-1/2 left-0 w-[16px] h-[2px] bg-emerald-300"></div>
-                                  </div>
-                               )}
-                            </div>
-                         )}
-                      </div>
-                    );
-                  })}
+      <div className="relative z-10 w-full flex-1 flex items-center justify-around gap-8 mt-12">
+        {rounds.map((round, rIdx) => (
+          <div key={rIdx} className="flex-1 flex flex-col gap-6">
+            <h3 className="text-center text-xs font-black uppercase tracking-[0.2em] text-slate-500 mb-2">
+              {round.matches.length === 1 ? 'FINAL' : round.matches.length === 2 ? 'SEMI-FINAL' : `ROUND ${rIdx + 1}`}
+            </h3>
+            {round.matches.map((match, mIdx) => (
+              <div key={mIdx} className="bg-white/5 border border-white/10 rounded-2xl p-4 flex flex-col gap-2 relative">
+                <div className="flex justify-between items-center text-sm font-bold">
+                  <span className={match.winnerTeamId === match.homeTeamId ? 'text-indigo-400' : ''}>{getTeamName(match.homeTeamId).toUpperCase()}</span>
+                  <span className="text-white/20">{match.scoreHome ?? '-'}</span>
                 </div>
-              </React.Fragment>
-            );
-          })}
-
-          {/* Champion Section */}
-          <div className="flex flex-col items-center justify-center pl-10 relative">
-             <div className="relative group">
-                <div className="absolute inset-0 bg-amber-400 blur-[80px] opacity-40 animate-pulse"></div>
-                <div className="w-52 h-52 bg-amber-400 border-[8px] border-white rounded-3xl shadow-[0_30px_60px_rgba(0,0,0,0.4)] flex flex-col items-center justify-center relative z-10 rotate-3 transition-transform hover:rotate-0">
-                   <Trophy size={90} className="text-amber-900 drop-shadow-lg mb-2" />
-                   <span className="text-[11px] font-black text-amber-900 uppercase tracking-widest">CHAMPION</span>
-                   <h4 className="mt-1 text-2xl font-black text-amber-950 px-4 text-center leading-none truncate w-full uppercase">
-                      {tournament.championTeamId ? getTeamName(tournament.championTeamId) : '???'}
-                   </h4>
+                <div className="h-px bg-white/5"></div>
+                <div className="flex justify-between items-center text-sm font-bold">
+                  <span className={match.winnerTeamId === match.awayTeamId ? 'text-indigo-400' : ''}>{match.awayTeamId ? getTeamName(match.awayTeamId).toUpperCase() : 'BYE'}</span>
+                  <span className="text-white/20">{match.scoreAway ?? '-'}</span>
                 </div>
-             </div>
+              </div>
+            ))}
           </div>
-        </main>
+        ))}
+      </div>
 
-        {/* Footer Area */}
-        <footer className="h-28 flex items-center justify-between px-16 relative">
-           <div className="flex flex-col">
-              <span className="text-[10px] font-bold text-emerald-200 uppercase tracking-widest opacity-50">Tournament System</span>
-              <span className="text-2xl font-black italic">@EduCupManager</span>
-           </div>
-           
-           <div className="absolute left-1/2 -translate-x-1/2 -top-12">
-              <img 
-                src="https://upload.wikimedia.org/wikipedia/commons/d/d3/Soccerball.svg" 
-                alt="ball" 
-                className="w-32 h-32 drop-shadow-[0_20px_20px_rgba(0,0,0,0.6)]"
-              />
-           </div>
-
-           <div className="text-right flex flex-col">
-              <span className="text-[10px] font-bold text-emerald-200 uppercase tracking-widest opacity-50">Official Report</span>
-              <span className="text-2xl font-black italic">{new Date().toLocaleDateString('uz-UZ')}</span>
-           </div>
-        </footer>
+      <div className="relative z-10 w-full border-t border-white/10 pt-8 flex justify-between items-center text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+        <span>EduCup Tournament Manager</span>
+        <span>Generated: {new Date().toLocaleString()}</span>
       </div>
     </div>
   );
 };
 
-// SQUAD POSTER TEMPLATE
-const SquadPoster: React.FC<{ team: Team, tournamentName: string, id: string }> = ({ team, tournamentName, id }) => (
-  <div 
-    id={id} 
-    className="w-[1080px] h-[1080px] bg-slate-950 p-20 flex flex-col items-center relative overflow-hidden text-white font-['Plus_Jakarta_Sans',_sans-serif]"
-  >
-     <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_#1e1b4b_0%,_#020617_70%)]"></div>
-     <header className="relative z-10 text-center mb-16">
-        <Badge variant="indigo" className="mb-6 px-6 py-2 rounded-full text-lg">Official Squad</Badge>
-        <h1 className="text-8xl font-black italic tracking-tighter uppercase mb-4">{team.name}</h1>
-        <p className="text-2xl font-bold text-indigo-400 tracking-[0.4em] uppercase opacity-80">{tournamentName}</p>
-     </header>
-     <main className="relative z-10 w-full flex-1 flex flex-col justify-center gap-6">
-        {team.players.map((p, i) => (
-          <div key={i} className="flex items-center gap-8 bg-white/5 border border-white/10 p-6 rounded-[2rem]">
-             <span className="text-3xl font-black text-indigo-500 opacity-40 italic">{(i + 1).toString().padStart(2, '0')}</span>
-             <span className="text-4xl font-black uppercase tracking-tight">{p} {team.captainName === p ? '★' : ''}</span>
-          </div>
-        ))}
-     </main>
-  </div>
-);
+// Added SquadPoster component to fix "Cannot find name 'SquadPoster'" error
+const SquadPoster: React.FC<{ team: Team, tournamentName: string, id: string }> = ({ team, tournamentName, id }) => {
+  return (
+    <div id={id} className="w-[800px] h-[1000px] bg-slate-900 p-16 text-white flex flex-col items-center justify-between relative overflow-hidden">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_#1e1b4b_0%,_#020617_80%)] opacity-60"></div>
+      
+      <div className="relative z-10 text-center space-y-2">
+        <p className="text-indigo-400 text-sm font-black uppercase tracking-[0.4em] mb-4">{tournamentName}</p>
+        <h1 className="text-7xl font-black uppercase italic tracking-tighter mb-2">{team.name}</h1>
+        <div className="w-24 h-1.5 bg-indigo-600 mx-auto rounded-full"></div>
+      </div>
+
+      <div className="relative z-10 w-full flex-1 flex flex-col items-center justify-center space-y-8 mt-12">
+        <div className="grid grid-cols-1 gap-4 w-full max-w-md">
+          {team.players.map((player, idx) => (
+            <div key={idx} className={`p-5 rounded-3xl border flex items-center justify-between font-black uppercase italic text-2xl transition-all shadow-xl
+              ${player === team.captainName ? 'bg-amber-500 text-black border-amber-400' : 'bg-white/5 border-white/10 text-white'}`}>
+              <span>{player}</span>
+              {player === team.captainName && <Crown size={24} fill="currentColor" />}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="relative z-10 flex flex-col items-center gap-4">
+        <Users size={48} className="text-indigo-500 opacity-20" />
+        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">Official Team Roster</p>
+      </div>
+    </div>
+  );
+};
 
 export const Bracket: React.FC = () => {
   const { tournament, teams, rounds, startTournament, generateNextRound } = useTournamentStore();
@@ -309,7 +357,6 @@ export const Bracket: React.FC = () => {
   if (!tournament) return null;
 
   const downloadPoster = async (id: string, fileName: string) => {
-    // Target element for export might be either off-screen or the preview one
     const node = document.getElementById(id);
     if (!node) return;
     setExporting(id);
@@ -317,7 +364,6 @@ export const Bracket: React.FC = () => {
       const originalLeft = node.style.left;
       const originalPosition = node.style.position;
       
-      // Temporarily show for capture if it's the off-screen one
       if (node.style.left === '-5000px') {
         node.style.left = '0';
         node.style.position = 'fixed';
@@ -330,7 +376,6 @@ export const Bracket: React.FC = () => {
         fontEmbedCSS: '', 
       });
       
-      // Restore
       node.style.left = originalLeft;
       node.style.position = originalPosition;
       
