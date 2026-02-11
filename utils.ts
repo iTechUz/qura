@@ -1,3 +1,4 @@
+
 import { v4 as uuidv4 } from 'uuid';
 import { Team, Match, Round, Tournament } from './types';
 
@@ -77,6 +78,19 @@ export interface PlayerStat {
   yellowCards: number;
   redCards: number;
   teamId: string;
+  matchesPlayed: number;
+}
+
+export interface TeamStat {
+  id: string;
+  name: string;
+  matches: number;
+  wins: number;
+  losses: number;
+  goalsFor: number;
+  goalsAgainst: number;
+  yellowCards: number;
+  redCards: number;
 }
 
 export const getTournamentStats = (rounds: Round[], teams: Team[]) => {
@@ -86,44 +100,103 @@ export const getTournamentStats = (rounds: Round[], teams: Team[]) => {
   let totalCards = 0;
   
   const playerStats: Record<string, PlayerStat> = {};
+  const teamStats: Record<string, TeamStat> = {};
 
   teams.forEach(team => {
+    teamStats[team.id] = { 
+      id: team.id, 
+      name: team.name, 
+      matches: 0, 
+      wins: 0, 
+      losses: 0, 
+      goalsFor: 0, 
+      goalsAgainst: 0, 
+      yellowCards: 0, 
+      redCards: 0 
+    };
     team.players.forEach(p => {
-      playerStats[p] = { name: p, goals: 0, assists: 0, yellowCards: 0, redCards: 0, teamId: team.id };
+      playerStats[p] = { name: p, goals: 0, assists: 0, yellowCards: 0, redCards: 0, teamId: team.id, matchesPlayed: 0 };
     });
   });
 
   const ensurePlayer = (p: string, teamId: string) => {
     if (!p) return null;
     if (!playerStats[p]) {
-      playerStats[p] = { name: p, goals: 0, assists: 0, yellowCards: 0, redCards: 0, teamId };
+      playerStats[p] = { name: p, goals: 0, assists: 0, yellowCards: 0, redCards: 0, teamId, matchesPlayed: 0 };
     }
     return playerStats[p];
   };
 
   allMatches.forEach(m => {
-    totalGoals += (m.scoreHome || 0) + (m.scoreAway || 0);
+    const sH = m.scoreHome || 0;
+    const sA = m.scoreAway || 0;
+    totalGoals += sH + sA;
     
+    // Team Stats
+    const tH = teamStats[m.homeTeamId];
+    const tA = m.awayTeamId ? teamStats[m.awayTeamId] : null;
+
+    if (tH) {
+      tH.matches++;
+      tH.goalsFor += sH;
+      tH.goalsAgainst += sA;
+      if (m.winnerTeamId === m.homeTeamId) tH.wins++;
+      else tH.losses++;
+    }
+
+    if (tA) {
+      tA.matches++;
+      tA.goalsFor += sA;
+      tA.goalsAgainst += sH;
+      if (m.winnerTeamId === m.awayTeamId) tA.wins++;
+      else tA.losses++;
+    }
+
+    // Player match participation (assume all team members played if match is finished)
+    const homeTeam = teams.find(t => t.id === m.homeTeamId);
+    homeTeam?.players.forEach(p => { if(playerStats[p]) playerStats[p].matchesPlayed++; });
+    if (m.awayTeamId) {
+      const awayTeam = teams.find(t => t.id === m.awayTeamId);
+      awayTeam?.players.forEach(p => { if(playerStats[p]) playerStats[p].matchesPlayed++; });
+    }
+
     m.homeGoals?.forEach(p => { const st = ensurePlayer(p, m.homeTeamId); if (st) st.goals++; });
     m.homeAssists?.forEach(p => { const st = ensurePlayer(p, m.homeTeamId); if (st) st.assists++; });
-    m.homeYellowCards?.forEach(p => { const st = ensurePlayer(p, m.homeTeamId); if (st) { st.yellowCards++; totalCards++; } });
-    m.homeRedCards?.forEach(p => { const st = ensurePlayer(p, m.homeTeamId); if (st) { st.redCards++; totalCards++; } });
+    m.homeYellowCards?.forEach(p => { 
+      const st = ensurePlayer(p, m.homeTeamId); 
+      if (st) { st.yellowCards++; totalCards++; }
+      if (tH) { tH.yellowCards++; }
+    });
+    m.homeRedCards?.forEach(p => { 
+      const st = ensurePlayer(p, m.homeTeamId); 
+      if (st) { st.redCards++; totalCards++; }
+      if (tH) { tH.redCards++; }
+    });
 
     if (m.awayTeamId) {
       m.awayGoals?.forEach(p => { const st = ensurePlayer(p, m.awayTeamId!); if (st) st.goals++; });
       m.awayAssists?.forEach(p => { const st = ensurePlayer(p, m.awayTeamId!); if (st) st.assists++; });
-      m.awayYellowCards?.forEach(p => { const st = ensurePlayer(p, m.awayTeamId!); if (st) { st.yellowCards++; totalCards++; } });
-      m.awayRedCards?.forEach(p => { const st = ensurePlayer(p, m.awayTeamId!); if (st) { st.redCards++; totalCards++; } });
+      m.awayYellowCards?.forEach(p => { 
+        const st = ensurePlayer(p, m.awayTeamId!); 
+        if (st) { st.yellowCards++; totalCards++; }
+        if (tA) { tA.yellowCards++; }
+      });
+      m.awayRedCards?.forEach(p => { 
+        const st = ensurePlayer(p, m.awayTeamId!); 
+        if (st) { st.redCards++; totalCards++; }
+        if (tA) { tA.redCards++; }
+      });
     }
   });
 
   const allPlayers = Object.values(playerStats);
+  const allTeams = Object.values(teamStats);
   
   const topScorers = [...allPlayers].sort((a, b) => b.goals - a.goals || b.assists - a.assists || a.name.localeCompare(b.name));
   const topAssisters = [...allPlayers].filter(p => p.assists > 0).sort((a, b) => b.assists - a.assists || b.goals - a.goals);
   const mostCards = [...allPlayers].filter(p => p.yellowCards > 0 || p.redCards > 0).sort((a, b) => (b.redCards * 2 + b.yellowCards) - (a.redCards * 2 + a.yellowCards));
 
-  return { totalMatches, totalGoals, totalCards, topScorers, topAssisters, mostCards, allPlayers };
+  return { totalMatches, totalGoals, totalCards, topScorers, topAssisters, mostCards, allPlayers, allTeams };
 };
 
 export const formatTeamsMessage = (teams: Team[]): string => {
@@ -225,7 +298,6 @@ export const formatTournamentSummary = (tournament: Tournament, teams: Team[], r
   
   summary += `\nTEAMS (${teams.length}):\n`;
   teams.forEach(t => {
-    // Escaped the single quote in 'Yo\'q' to fix syntax error on line 229
     summary += `- ${t.name} (Sardor: ${t.captainName || 'Yo\'q'}) - (${t.players.join(', ')})\n`;
   });
   

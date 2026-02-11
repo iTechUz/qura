@@ -17,7 +17,9 @@ import {
   Crown,
   FastForward,
   Info,
-  Star
+  Plus,
+  Minus,
+  Target
 } from 'lucide-react';
 
 interface MatchCardProps {
@@ -30,8 +32,8 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match, roundIdx }) => {
   const homeTeam = teams.find(t => t.id === match.homeTeamId);
   const awayTeam = teams.find(t => t.id === match.awayTeamId);
 
-  const [scoreHome, setScoreHome] = React.useState(match.scoreHome?.toString() || '0');
-  const [scoreAway, setScoreAway] = React.useState(match.scoreAway?.toString() || '0');
+  const [scoreHome, setScoreHome] = React.useState(match.scoreHome || 0);
+  const [scoreAway, setScoreAway] = React.useState(match.scoreAway || 0);
   
   const [homeGoals, setHomeGoals] = React.useState<string[]>(match.homeGoals || []);
   const [awayGoals, setAwayGoals] = React.useState<string[]>(match.awayGoals || []);
@@ -41,15 +43,15 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match, roundIdx }) => {
   const [homeYellows, setHomeYellows] = React.useState<string[]>(match.homeYellowCards || []);
   const [awayYellows, setAwayYellows] = React.useState<string[]>(match.awayYellowCards || []);
   const [homeReds, setHomeReds] = React.useState<string[]>(match.homeRedCards || []);
-  const [awayReds, setAwayReds] = React.useState<string[]>(match.awayRedCards || []);
+  const [awayReds, setAwayRedCards] = React.useState<string[]>(match.awayRedCards || []);
   
   const [showDetails, setShowDetails] = React.useState(false);
   const [showConfirmReset, setShowConfirmReset] = React.useState(false);
   const [isUpdating, setIsUpdating] = React.useState(false);
 
   React.useEffect(() => {
-    setScoreHome(match.scoreHome?.toString() || '0');
-    setScoreAway(match.scoreAway?.toString() || '0');
+    setScoreHome(match.scoreHome || 0);
+    setScoreAway(match.scoreAway || 0);
     setHomeGoals(match.homeGoals || []);
     setAwayGoals(match.awayGoals || []);
     setHomeAssists(match.homeAssists || []);
@@ -57,17 +59,17 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match, roundIdx }) => {
     setHomeYellows(match.homeYellowCards || []);
     setAwayYellows(match.awayYellowCards || []);
     setHomeReds(match.homeRedCards || []);
-    setAwayReds(match.awayRedCards || []);
+    setAwayRedCards(match.awayRedCards || []);
   }, [match]);
 
   const isBye = match.status === 'bye';
   const isFinished = match.status === 'finished';
   const isLastRound = rounds.length - 1 === roundIdx;
 
-  const handleScoreChange = (side: 'home' | 'away', val: string) => {
-    const num = Math.max(0, parseInt(val) || 0);
+  const handleScoreChange = (side: 'home' | 'away', newScore: number) => {
+    const num = Math.max(0, newScore);
     if (side === 'home') {
-      setScoreHome(val);
+      setScoreHome(num);
       setHomeGoals(prev => {
         const next = [...prev];
         if (next.length > num) return next.slice(0, num);
@@ -81,7 +83,7 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match, roundIdx }) => {
         return next;
       });
     } else {
-      setScoreAway(val);
+      setScoreAway(num);
       setAwayGoals(prev => {
         const next = [...prev];
         if (next.length > num) return next.slice(0, num);
@@ -107,7 +109,7 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match, roundIdx }) => {
     if (side === 'home') {
       type === 'yellow' ? setHomeYellows([...homeYellows, ""]) : setHomeReds([...homeReds, ""]);
     } else {
-      type === 'yellow' ? setAwayYellows([...awayYellows, ""]) : setAwayReds([...awayReds, ""]);
+      type === 'yellow' ? setAwayYellows([...awayYellows, ""]) : setAwayRedCards([...awayReds, ""]);
     }
   };
 
@@ -121,8 +123,8 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match, roundIdx }) => {
       return;
     }
 
-    const sH = parseInt(scoreHome) || 0;
-    const sA = parseInt(scoreAway) || 0;
+    const sH = scoreHome;
+    const sA = scoreAway;
     let winnerId = sH > sA ? match.homeTeamId : (match.awayTeamId || undefined);
     
     if (sH === sA && match.winnerTeamId) winnerId = match.winnerTeamId;
@@ -184,7 +186,7 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match, roundIdx }) => {
   const homeWinner = match.winnerTeamId === match.homeTeamId;
   const awayWinner = match.winnerTeamId === match.awayTeamId;
 
-  const TeamRow = ({ team, score, side, isWinner, goals, assists }: { team: Team | undefined, score: string, side: 'home' | 'away', isWinner: boolean, goals: string[], assists: string[] }) => (
+  const TeamRow = ({ team, score, side, isWinner, goals, assists }: { team: Team | undefined, score: number, side: 'home' | 'away', isWinner: boolean, goals: string[], assists: string[] }) => (
     <div className={`relative p-3 rounded-2xl transition-all duration-500 ${isWinner ? 'bg-indigo-600 text-white shadow-[0_10px_30px_rgba(79,70,229,0.3)] ring-2 ring-indigo-400 ring-offset-2' : 'bg-slate-50 hover:bg-slate-100'}`}>
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3 min-w-0">
@@ -206,45 +208,55 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match, roundIdx }) => {
           </div>
         </div>
         
-        <div className="flex items-center gap-2">
-           {isWinner && <Trophy size={16} className="text-amber-400 animate-pulse" />}
-           <input 
-              type="number" 
-              min="0" 
-              value={score} 
-              onChange={e => handleScoreChange(side, e.target.value)}
-              className={`w-12 h-10 rounded-xl text-center text-lg font-black outline-none transition-all ${isWinner ? 'bg-white/20 text-white placeholder:text-white/50' : 'bg-white border border-slate-200 text-slate-900'}`}
-            />
+        {/* Score Stepper - Optimal for 1-digit scores */}
+        <div className="flex items-center bg-black/5 rounded-xl p-1 gap-1">
+           <button 
+             onClick={() => handleScoreChange(side, score - 1)}
+             className={`w-8 h-8 flex items-center justify-center rounded-lg transition-colors ${isWinner ? 'hover:bg-white/20 text-white' : 'hover:bg-white text-slate-600'}`}
+           >
+             <Minus size={14} strokeWidth={3} />
+           </button>
+           <div className="w-8 text-center">
+              <span className="text-xl font-black italic tabular-nums">{score}</span>
+           </div>
+           <button 
+             onClick={() => handleScoreChange(side, score + 1)}
+             className={`w-8 h-8 flex items-center justify-center rounded-lg transition-colors ${isWinner ? 'hover:bg-white/20 text-white' : 'hover:bg-white text-slate-600'}`}
+           >
+             <Plus size={14} strokeWidth={3} />
+           </button>
         </div>
       </div>
 
-      {(goals.length > 0 || assists.length > 0) && (
+      {goals.length > 0 && (
         <div className="mt-3 pt-3 border-t border-black/5 space-y-2 animate-in slide-in-from-top-2 duration-300">
            {goals.map((_: string, i: number) => (
-             <div key={i} className="grid grid-cols-2 gap-2">
-                <div className="relative">
+             <div key={i} className="flex flex-col gap-1.5 p-2 bg-black/5 rounded-xl border border-transparent hover:border-black/5 transition-all">
+                <div className="flex items-center gap-2">
+                   <div className="w-5 h-5 flex items-center justify-center shrink-0 opacity-60">⚽️</div>
                    <select 
                       value={goals[i]} 
                       onChange={e => updateScorer(goals, side === 'home' ? setHomeGoals : setAwayGoals, i, e.target.value)}
-                      className={`w-full p-2 rounded-lg bg-black/5 text-[9px] font-black outline-none border-none appearance-none ${isWinner ? 'text-white' : 'text-slate-700'}`}
+                      className={`flex-1 bg-transparent text-[10px] font-black outline-none border-none appearance-none cursor-pointer ${isWinner ? 'text-white' : 'text-slate-700'}`}
                     >
-                      <option value="">GOL...</option>
+                      <option value="" className="text-slate-900">GOL URGAN O'YINCHI...</option>
                       {team?.players.map((p: string) => (
-                        <option key={p} value={p}>
+                        <option key={p} value={p} className="text-slate-900">
                           {p === team.captainName ? `★ ${p} (C)` : p}
                         </option>
                       ))}
                    </select>
                 </div>
-                <div className="relative">
+                <div className="flex items-center gap-2">
+                   <div className="w-5 h-5 flex items-center justify-center shrink-0 opacity-60">👟</div>
                    <select 
                       value={assists[i]} 
                       onChange={e => updateScorer(assists, side === 'home' ? setHomeAssists : setAwayAssists, i, e.target.value)}
-                      className={`w-full p-2 rounded-lg bg-black/5 text-[9px] font-black outline-none border-none appearance-none ${isWinner ? 'text-white' : 'text-slate-700'}`}
+                      className={`flex-1 bg-transparent text-[10px] font-black outline-none border-none appearance-none cursor-pointer ${isWinner ? 'text-white' : 'text-slate-700'}`}
                     >
-                      <option value="">ASSIST...</option>
+                      <option value="" className="text-slate-900">ASSIST BERGAN...</option>
                       {team?.players.map((p: string) => (
-                        <option key={p} value={p}>
+                        <option key={p} value={p} className="text-slate-900">
                           {p === team.captainName ? `★ ${p} (C)` : p}
                         </option>
                       ))}
@@ -324,7 +336,61 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match, roundIdx }) => {
                         <button onClick={() => removeCard(homeYellows, setHomeYellows, i)} className="p-1 hover:bg-rose-50 text-slate-300 hover:text-rose-500 rounded-lg transition-colors"><X size={14}/></button>
                      </div>
                    ))}
-                   {/* Similar logic for other types if needed */}
+                   {/* Logic for Reds/Away similar */}
+                   {homeReds.map((v, i) => (
+                     <div key={`hr-${i}`} className="flex items-center gap-2 bg-white p-2 rounded-xl border border-slate-100 animate-in zoom-in duration-200 shadow-sm">
+                        <div className="w-2.5 h-4 bg-rose-500 rounded-sm shadow-[0_0_5px_rgba(244,63,94,0.5)]"></div>
+                        <select 
+                          value={v} 
+                          onChange={e => updateScorer(homeReds, setHomeReds, i, e.target.value)} 
+                          className="flex-1 bg-transparent text-[10px] font-bold border-none outline-none appearance-none"
+                        >
+                          <option value="">O'yinchi tanlang...</option>
+                          {homeTeam?.players.map(p => (
+                            <option key={p} value={p}>
+                              {p === homeTeam.captainName ? `★ ${p} (C)` : p}
+                            </option>
+                          ))}
+                        </select>
+                        <button onClick={() => removeCard(homeReds, setHomeReds, i)} className="p-1 hover:bg-rose-50 text-slate-300 hover:text-rose-500 rounded-lg transition-colors"><X size={14}/></button>
+                     </div>
+                   ))}
+                   {awayYellows.map((v, i) => (
+                     <div key={`ay-${i}`} className="flex items-center gap-2 bg-white p-2 rounded-xl border border-slate-100 animate-in zoom-in duration-200 shadow-sm">
+                        <div className="w-2.5 h-4 bg-amber-400 rounded-sm"></div>
+                        <select 
+                          value={v} 
+                          onChange={e => updateScorer(awayYellows, setAwayYellows, i, e.target.value)} 
+                          className="flex-1 bg-transparent text-[10px] font-bold border-none outline-none appearance-none"
+                        >
+                          <option value="">O'yinchi tanlang...</option>
+                          {awayTeam?.players.map(p => (
+                            <option key={p} value={p}>
+                              {p === awayTeam.captainName ? `★ ${p} (C)` : p}
+                            </option>
+                          ))}
+                        </select>
+                        <button onClick={() => removeCard(awayYellows, setAwayYellows, i)} className="p-1 hover:bg-rose-50 text-slate-300 hover:text-rose-500 rounded-lg transition-colors"><X size={14}/></button>
+                     </div>
+                   ))}
+                   {awayReds.map((v, i) => (
+                     <div key={`ar-${i}`} className="flex items-center gap-2 bg-white p-2 rounded-xl border border-slate-100 animate-in zoom-in duration-200 shadow-sm">
+                        <div className="w-2.5 h-4 bg-rose-500 rounded-sm"></div>
+                        <select 
+                          value={v} 
+                          onChange={e => updateScorer(awayReds, setAwayRedCards, i, e.target.value)} 
+                          className="flex-1 bg-transparent text-[10px] font-bold border-none outline-none appearance-none"
+                        >
+                          <option value="">O'yinchi tanlang...</option>
+                          {awayTeam?.players.map(p => (
+                            <option key={p} value={p}>
+                              {p === awayTeam.captainName ? `★ ${p} (C)` : p}
+                            </option>
+                          ))}
+                        </select>
+                        <button onClick={() => removeCard(awayReds, setAwayRedCards, i)} className="p-1 hover:bg-rose-50 text-slate-300 hover:text-rose-500 rounded-lg transition-colors"><X size={14}/></button>
+                     </div>
+                   ))}
                 </div>
              </div>
            )}
@@ -340,7 +406,7 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match, roundIdx }) => {
            </Button>
         </div>
 
-        {isFinished && match.scoreHome === match.scoreAway && !match.winnerTeamId && (
+        {isFinished && scoreHome === scoreAway && !match.winnerTeamId && (
           <div className="mt-4 p-4 bg-amber-50 border-2 border-dashed border-amber-200 rounded-2xl space-y-4 animate-in zoom-in duration-300">
              <div className="flex flex-col items-center gap-1">
                 <p className="text-[10px] font-black text-amber-700 uppercase tracking-[0.3em]">Durang natija!</p>
