@@ -55,7 +55,7 @@ export const Export: React.FC = () => {
     {
       id: 'teams',
       title: 'Jamoalar tarkibi',
-      description: 'Ishtirokchilar va jamoalar ro\'yxati xabari.',
+      description: 'Ishtirokchilar va jamoalar ro\'yxati.',
       icon: <Terminal size={18} className="text-indigo-500" />,
       getMessage: () => formatTeamsMessage(teams),
       available: teams.length > 0
@@ -63,7 +63,7 @@ export const Export: React.FC = () => {
     {
       id: 'current_round',
       title: 'Bosqich natijalari',
-      description: 'Oxirgi o\'yinlar va g\'oliblar xabari.',
+      description: 'Oxirgi o\'yinlar va g\'oliblar.',
       icon: <Terminal size={18} className="text-emerald-500" />,
       getMessage: () => rounds.length > 0 ? formatRoundMessage(rounds[rounds.length - 1], teams) : '',
       available: rounds.length > 0
@@ -71,7 +71,7 @@ export const Export: React.FC = () => {
     {
         id: 'champion',
         title: 'Chempionni eʼlon qilish',
-        description: 'G\'olib jamoani tantanali tabriklash xabari.',
+        description: 'G\'olib jamoani tabriklash xabari.',
         icon: <Terminal size={18} className="text-amber-500" />,
         getMessage: () => {
           const champion = teams.find(t => t.id === tournament.championTeamId);
@@ -82,11 +82,11 @@ export const Export: React.FC = () => {
   ];
 
   return (
-    <div className="space-y-12 pb-20">
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-slate-200 pb-8">
+    <div className="space-y-10 sm:space-y-12 pb-20">
+      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-6 border-b border-slate-200 pb-8">
         <div className="space-y-1">
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Telegram Hub</h1>
-          <p className="text-sm text-slate-500">Ma'lumotlarni Telegramga yuborish va nusxalash markazi.</p>
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight pr-2 uppercase italic">Telegram Hub</h1>
+          <p className="text-[10px] sm:text-sm text-slate-500 font-bold uppercase tracking-[0.2em] opacity-70">Ma'lumotlarni yuborish va arxivlash markazi.</p>
         </div>
         
         <div className="flex gap-2">
@@ -103,8 +103,8 @@ export const Export: React.FC = () => {
                reader.readAsText(file);
              }
            }} accept=".json" className="hidden" />
-           <Button variant="outline" size="sm" className="rounded-xl font-bold" onClick={() => fileInputRef.current?.click()}>
-              <Upload size={14} className="mr-2" /> Backup ochish
+           <Button variant="outline" size="sm" className="rounded-xl font-black h-10 text-[10px] tracking-widest flex-1 sm:flex-initial" onClick={() => fileInputRef.current?.click()}>
+              <Upload size={14} className="mr-2" /> BACKUP OCHISH
            </Button>
         </div>
       </header>
@@ -113,10 +113,10 @@ export const Export: React.FC = () => {
       <section className="space-y-6">
         <div className="flex items-center gap-2 px-1">
            <Database size={16} className="text-slate-400" />
-           <h2 className="text-xs font-black uppercase tracking-widest text-slate-500">Arxiv fayllarini yuklash</h2>
+           <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">Arxiv fayllarini yuklash</h2>
         </div>
         
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 xs:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4">
           {[
             { title: 'O\'yinlar', ext: 'CSV', icon: <FileSpreadsheet />, action: () => exportMatchesToCSV(rounds, teams, tournament.name), disabled: rounds.length === 0 },
             { title: 'Jamoalar', ext: 'CSV', icon: <FileSpreadsheet />, action: () => exportTeamsToCSV(teams, tournament.name), disabled: teams.length === 0 },
@@ -124,13 +124,13 @@ export const Export: React.FC = () => {
             { title: 'Hisobot', ext: 'TXT', icon: <FileText />, action: () => downloadFile(formatTournamentSummary(tournament, teams, rounds), `${tournament.name}_Summary.txt`, 'text/plain'), disabled: false },
             { title: 'Backup', ext: 'JSON', icon: <FileJson />, action: () => exportToJSON({ tournament, teams, rounds }, tournament.name), disabled: false },
           ].map((item, i) => (
-            <Card key={i} className="p-4 text-center border-slate-200 hover:border-indigo-200">
-               <div className="flex flex-col items-center gap-3">
-                  <div className="p-3 bg-slate-50 text-slate-400 rounded-xl">
-                     {React.cloneElement(item.icon as React.ReactElement, { size: 20 })}
+            <Card key={i} className="p-3 sm:p-4 text-center border-slate-200 hover:border-indigo-200 shadow-sm transition-all hover:translate-y-[-2px]" variant="default">
+               <div className="flex flex-col items-center gap-2 sm:gap-3">
+                  <div className="p-2.5 sm:p-3 bg-slate-50 text-slate-400 rounded-xl">
+                     {React.cloneElement(item.icon as React.ReactElement, { size: 18 })}
                   </div>
-                  <h4 className="text-[11px] font-black text-slate-900">{item.title}</h4>
-                  <Button variant="secondary" size="sm" className="w-full text-[10px] font-black h-8 rounded-lg" onClick={item.action} disabled={item.disabled}>
+                  <h4 className="text-[9px] sm:text-[11px] font-black text-slate-900 uppercase tracking-tight truncate w-full pr-1">{item.title}</h4>
+                  <Button variant="secondary" size="sm" className="w-full text-[8px] sm:text-[10px] font-black h-7 sm:h-8 rounded-lg tracking-widest" onClick={item.action} disabled={item.disabled}>
                      YUKLASH
                   </Button>
                </div>
@@ -143,51 +143,51 @@ export const Export: React.FC = () => {
       <section className="space-y-6">
         <div className="flex items-center gap-2 px-1">
            <Send size={16} className="text-[#229ED9]" />
-           <h2 className="text-xs font-black uppercase tracking-widest text-slate-500">Publishing Hub</h2>
+           <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">Publishing Hub</h2>
         </div>
 
-        <div className="grid grid-cols-1 gap-6">
+        <div className="grid grid-cols-1 gap-4 sm:gap-6">
           {actions.map(action => {
             const fullMessage = action.getMessage();
             const parts = splitTelegramMessage(fullMessage);
 
             return (
-              <Card key={action.id} className={`${!action.available ? 'opacity-50 grayscale pointer-events-none' : ''}`}>
-                <div className="flex flex-col lg:flex-row gap-8">
-                  <div className="lg:w-1/3 space-y-4">
+              <Card key={action.id} className={`${!action.available ? 'opacity-50 grayscale pointer-events-none' : ''} p-0 overflow-hidden`}>
+                <div className="flex flex-col lg:flex-row divide-y lg:divide-y-0 lg:divide-x divide-slate-100">
+                  <div className="lg:w-1/3 p-5 sm:p-8 space-y-4 bg-slate-50/50">
                     <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center border border-slate-100">
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-white flex items-center justify-center border border-slate-100 shadow-sm shrink-0">
                         {action.icon}
                       </div>
-                      <div>
-                        <h3 className="text-lg font-black text-slate-900 leading-tight">{action.title}</h3>
-                        <p className="text-xs text-slate-500 font-medium">{action.description}</p>
+                      <div className="min-w-0">
+                        <h3 className="text-base sm:text-lg font-black text-slate-900 leading-tight uppercase italic pr-2 truncate">{action.title}</h3>
+                        <p className="text-[10px] sm:text-xs text-slate-500 font-bold uppercase tracking-widest truncate">{action.description}</p>
                       </div>
                     </div>
                     {!action.available && (
-                      <div className="flex items-center gap-2 text-[10px] font-black text-amber-600 bg-amber-50 px-3 py-2 rounded-xl">
+                      <div className="flex items-center gap-2 text-[9px] font-black text-amber-600 bg-amber-50 px-3 py-2 rounded-xl border border-amber-100">
                          <AlertCircle size={14} /> Ma'lumot yetarli emas
                       </div>
                     )}
                   </div>
 
-                  <div className="flex-1 space-y-6">
+                  <div className="flex-1 p-5 sm:p-8 space-y-6">
                     {parts.map((part, pIdx) => (
                       <div key={pIdx} className="space-y-3">
-                        <div className="flex items-center justify-between text-[10px] font-black text-slate-400 px-1">
+                        <div className="flex items-center justify-between text-[9px] font-black text-slate-400 px-1 uppercase tracking-widest">
                            <span>{parts.length > 1 ? `Qism ${pIdx + 1} / ${parts.length}` : 'Xabar matni'}</span>
-                           <span>{part.length} belgi</span>
+                           <span>{part.length} ta belgi</span>
                         </div>
-                        <div className="p-5 bg-slate-950 rounded-2xl font-mono text-xs text-indigo-300 whitespace-pre-wrap leading-relaxed border border-slate-800 shadow-inner">
+                        <div className="p-4 sm:p-6 bg-slate-950 rounded-2xl font-mono text-[10px] sm:text-xs text-indigo-300 whitespace-pre-wrap leading-relaxed border border-slate-800 shadow-inner overflow-x-auto">
                           {part}
                         </div>
-                        <div className="flex gap-2">
-                          <Button variant="secondary" size="sm" className="flex-1 rounded-xl font-bold h-11" onClick={() => handleCopy(part, `${action.id}-${pIdx}`)}>
+                        <div className="flex flex-col sm:flex-row gap-2">
+                          <Button variant="secondary" size="sm" className="w-full sm:flex-1 rounded-xl font-black h-11 text-[10px] tracking-[0.1em]" onClick={() => handleCopy(part, `${action.id}-${pIdx}`)}>
                             {copiedId === `${action.id}-${pIdx}` ? <Check size={16} className="text-green-500" /> : <Copy size={16} />}
-                            <span className="ml-2">{copiedId === `${action.id}-${pIdx}` ? 'NUSXALANDI' : 'NUSXA OLISH'}</span>
+                            <span className="ml-2 pr-1">{copiedId === `${action.id}-${pIdx}` ? 'NUSXALANDI' : 'NUSXA OLISH'}</span>
                           </Button>
-                          <Button size="sm" className="flex-1 bg-[#229ED9] hover:bg-[#229ED9]/90 border-none rounded-xl font-bold h-11" onClick={() => handleShare(part)}>
-                            <Send size={16} className="mr-2" /> TELEGRAM
+                          <Button size="sm" className="w-full sm:flex-1 bg-[#229ED9] hover:bg-[#229ED9]/90 border-none rounded-xl font-black h-11 text-[10px] tracking-[0.1em]" onClick={() => handleShare(part)}>
+                            <Send size={16} className="mr-2" /> TELEGRAMGA YUBORISH
                           </Button>
                         </div>
                       </div>

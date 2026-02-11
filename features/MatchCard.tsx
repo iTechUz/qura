@@ -48,6 +48,8 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match, roundIdx }) => {
   const [showDetails, setShowDetails] = React.useState(false);
   const [showConfirmReset, setShowConfirmReset] = React.useState(false);
   const [isUpdating, setIsUpdating] = React.useState(false);
+  const [justFinished, setJustFinished] = React.useState(false);
+  const [winnerAnimate, setWinnerAnimate] = React.useState(false);
 
   React.useEffect(() => {
     setScoreHome(match.scoreHome || 0);
@@ -61,6 +63,15 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match, roundIdx }) => {
     setHomeReds(match.homeRedCards || []);
     setAwayRedCards(match.awayRedCards || []);
   }, [match]);
+
+  // Winner transition animation effect
+  React.useEffect(() => {
+    if (match.winnerTeamId) {
+      setWinnerAnimate(true);
+      const timer = setTimeout(() => setWinnerAnimate(false), 800);
+      return () => clearTimeout(timer);
+    }
+  }, [match.winnerTeamId]);
 
   const isBye = match.status === 'bye';
   const isFinished = match.status === 'finished';
@@ -150,6 +161,8 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match, roundIdx }) => {
       });
       setIsUpdating(false);
       setShowConfirmReset(false);
+      setJustFinished(true);
+      setTimeout(() => setJustFinished(false), 2000);
     }, 400);
   };
 
@@ -158,6 +171,8 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match, roundIdx }) => {
     if (!isLastRound && isFinished) resetDownstream(roundIdx);
     updateMatch(roundIdx, match.id, { winnerTeamId: id, status: 'finished' });
     setShowConfirmReset(false);
+    setJustFinished(true);
+    setTimeout(() => setJustFinished(false), 2000);
   };
 
   if (isBye) {
@@ -175,10 +190,6 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match, roundIdx }) => {
           <span className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em]">Keyingi bosqichda</span>
           <span className="h-px w-4 bg-indigo-200"></span>
         </div>
-        <div className="mt-4 p-2 bg-white rounded-xl border border-indigo-100 flex items-center gap-2 justify-center">
-          <Info size={12} className="text-indigo-400" />
-          <span className="text-[9px] font-bold text-slate-500">Raqib yo'qligi sababli o'tdi</span>
-        </div>
       </Card>
     );
   }
@@ -187,260 +198,100 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match, roundIdx }) => {
   const awayWinner = match.winnerTeamId === match.awayTeamId;
 
   const TeamRow = ({ team, score, side, isWinner, goals, assists }: { team: Team | undefined, score: number, side: 'home' | 'away', isWinner: boolean, goals: string[], assists: string[] }) => (
-    <div className={`relative p-3 rounded-2xl transition-all duration-500 ${isWinner ? 'bg-indigo-600 text-white shadow-[0_10px_30px_rgba(79,70,229,0.3)] ring-2 ring-indigo-400 ring-offset-2' : 'bg-slate-50 hover:bg-slate-100'}`}>
+    <div className={`relative p-3 rounded-2xl transition-all duration-500 ${isWinner ? `bg-indigo-600 text-white shadow-[0_10px_30px_rgba(79,70,229,0.3)] ring-2 ring-indigo-400 ring-offset-2 ${winnerAnimate ? 'animate-pulse scale-[1.05]' : 'scale-[1.02]'}` : 'bg-slate-50 hover:bg-slate-100'} ${justFinished && isWinner ? 'animate-in zoom-in-95 fade-in duration-500' : ''}`}>
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3 min-w-0">
-          <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm shrink-0 transition-transform ${isWinner ? 'bg-white text-indigo-600 scale-105' : 'bg-white border border-slate-200 text-slate-600'}`}>
+          <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-[10px] shrink-0 italic ${isWinner ? 'bg-white/20' : 'bg-slate-200 text-slate-500'}`}>
             {team?.name.charAt(0).toUpperCase()}
           </div>
-          <div className="flex flex-col min-w-0">
-            <span className="font-black truncate text-sm tracking-tight">{team?.name.toUpperCase()}</span>
-            {isWinner && (
-              <span className="text-[9px] font-bold text-indigo-200 flex items-center gap-1 uppercase tracking-widest">
-                <Crown size={8} fill="currentColor" /> Winner
-              </span>
-            )}
-            {!isWinner && team?.captainName && (
-               <Badge variant="amber" size="xs" className="mt-0.5 self-start">
-                 {team.captainName} (C)
-               </Badge>
-            )}
-          </div>
+          <span className="font-black text-xs uppercase italic truncate pr-1">{team?.name}</span>
         </div>
-        
-        {/* Score Stepper - Optimal for 1-digit scores */}
-        <div className="flex items-center bg-black/5 rounded-xl p-1 gap-1">
-           <button 
-             onClick={() => handleScoreChange(side, score - 1)}
-             className={`w-8 h-8 flex items-center justify-center rounded-lg transition-colors ${isWinner ? 'hover:bg-white/20 text-white' : 'hover:bg-white text-slate-600'}`}
-           >
-             <Minus size={14} strokeWidth={3} />
-           </button>
-           <div className="w-8 text-center">
-              <span className="text-xl font-black italic tabular-nums">{score}</span>
-           </div>
-           <button 
-             onClick={() => handleScoreChange(side, score + 1)}
-             className={`w-8 h-8 flex items-center justify-center rounded-lg transition-colors ${isWinner ? 'hover:bg-white/20 text-white' : 'hover:bg-white text-slate-600'}`}
-           >
-             <Plus size={14} strokeWidth={3} />
-           </button>
+        <div className="flex items-center gap-3 shrink-0">
+           {isWinner && <Crown size={16} fill="currentColor" className="text-amber-300 animate-bounce" />}
+           <span className="text-xl font-black italic tabular-nums">{score}</span>
         </div>
       </div>
-
-      {goals.length > 0 && (
-        <div className="mt-3 pt-3 border-t border-black/5 space-y-2 animate-in slide-in-from-top-2 duration-300">
-           {goals.map((_: string, i: number) => (
-             <div key={i} className="flex flex-col gap-1.5 p-2 bg-black/5 rounded-xl border border-transparent hover:border-black/5 transition-all">
-                <div className="flex items-center gap-2">
-                   <div className="w-5 h-5 flex items-center justify-center shrink-0 opacity-60">⚽️</div>
-                   <select 
-                      value={goals[i]} 
-                      onChange={e => updateScorer(goals, side === 'home' ? setHomeGoals : setAwayGoals, i, e.target.value)}
-                      className={`flex-1 bg-transparent text-[10px] font-black outline-none border-none appearance-none cursor-pointer ${isWinner ? 'text-white' : 'text-slate-700'}`}
-                    >
-                      <option value="" className="text-slate-900">GOL URGAN O'YINCHI...</option>
-                      {team?.players.map((p: string) => (
-                        <option key={p} value={p} className="text-slate-900">
-                          {p === team.captainName ? `★ ${p} (C)` : p}
-                        </option>
-                      ))}
-                   </select>
-                </div>
-                <div className="flex items-center gap-2">
-                   <div className="w-5 h-5 flex items-center justify-center shrink-0 opacity-60">👟</div>
-                   <select 
-                      value={assists[i]} 
-                      onChange={e => updateScorer(assists, side === 'home' ? setHomeAssists : setAwayAssists, i, e.target.value)}
-                      className={`flex-1 bg-transparent text-[10px] font-black outline-none border-none appearance-none cursor-pointer ${isWinner ? 'text-white' : 'text-slate-700'}`}
-                    >
-                      <option value="" className="text-slate-900">ASSIST BERGAN...</option>
-                      {team?.players.map((p: string) => (
-                        <option key={p} value={p} className="text-slate-900">
-                          {p === team.captainName ? `★ ${p} (C)` : p}
-                        </option>
-                      ))}
-                   </select>
-                </div>
-             </div>
-           ))}
-        </div>
-      )}
     </div>
   );
 
   return (
-    <Card className={`group relative p-0 overflow-hidden transition-all duration-300 ${isUpdating ? 'opacity-50' : ''} ${isFinished ? 'border-indigo-100' : 'hover:border-indigo-300 shadow-sm'}`}>
-      <div className={`px-4 py-2 flex items-center justify-between border-b transition-colors ${isFinished ? 'bg-indigo-50/50 border-indigo-100' : 'bg-slate-50 border-slate-100'}`}>
-         <div className="flex items-center gap-2">
-           <div className={`w-2 h-2 rounded-full ${isFinished ? 'bg-slate-300' : 'bg-indigo-600 animate-ping'}`}></div>
-           <span className={`text-[9px] font-black uppercase tracking-[0.2em] ${isFinished ? 'text-slate-400' : 'text-indigo-600'}`}>
-             {isFinished ? 'Yakunlangan' : 'Jonli Bahs'}
-           </span>
-         </div>
-         <span className="text-[9px] font-bold text-slate-300 tracking-tighter italic">#{match.id.slice(0, 6)}</span>
-      </div>
-      
-      <div className="p-5 space-y-4">
-        <TeamRow team={homeTeam} score={scoreHome} side="home" isWinner={homeWinner} goals={homeGoals} assists={homeAssists} />
-        
-        <div className="relative flex items-center justify-center">
-           <div className="absolute w-full border-t border-slate-100"></div>
-           <div className="relative flex flex-col items-center">
-              <div className="w-8 h-8 rounded-full bg-white border border-slate-100 shadow-sm flex items-center justify-center z-10">
-                 <span className="text-[9px] font-black text-slate-400 italic">VS</span>
-              </div>
-           </div>
+    <Card className={`relative overflow-hidden p-0 border-slate-200 shadow-sm hover:shadow-lg transition-all duration-300 group ${isFinished ? 'border-indigo-100' : ''}`}>
+      <div className="p-5 space-y-3">
+        <TeamRow team={homeTeam} score={match.scoreHome || 0} side="home" isWinner={homeWinner} goals={homeGoals} assists={homeAssists} />
+        <div className="flex items-center justify-center gap-3 py-1">
+           <div className="flex-1 h-px bg-slate-100"></div>
+           <div className="w-8 h-8 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-[10px] font-black italic text-slate-300">VS</div>
+           <div className="flex-1 h-px bg-slate-100"></div>
         </div>
+        <TeamRow team={awayTeam} score={match.scoreAway || 0} side="away" isWinner={awayWinner} goals={awayGoals} assists={awayAssists} />
 
-        <TeamRow team={awayTeam} score={scoreAway} side="away" isWinner={awayWinner} goals={awayGoals} assists={awayAssists} />
-
-        <div className="pt-2 flex flex-col gap-3">
+        {/* Action Bar */}
+        <div className="pt-4 flex items-center justify-between gap-3">
            <button 
-             className="w-full py-1 text-[10px] font-black text-slate-400 hover:text-indigo-600 flex items-center justify-center gap-1.5 transition-all group-hover:translate-y-[-2px]"
              onClick={() => setShowDetails(!showDetails)}
+             className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all"
            >
-              {showDetails ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-              INTIZOM CHORALARI
+             {showDetails ? <ChevronUp size={14} /> : <ChevronDown size={14} />} 
+             {showDetails ? 'YASHIRISH' : 'NATIJA KIRITISH'}
            </button>
+           {isFinished && (
+             <Badge variant="indigo" size="xs" className="italic px-3">TUGALLANDI</Badge>
+           )}
+        </div>
+      </div>
 
-           {showDetails && (
-             <div className="p-4 bg-slate-50 rounded-2xl space-y-4 animate-in slide-in-from-top-2 duration-300 border border-slate-100 shadow-inner">
-                <div className="flex justify-between items-center">
-                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Sariq/Qizil kartochkalar</span>
-                  <div className="flex gap-2">
-                    <button onClick={() => addCard('home', 'yellow')} className="px-2 py-0.5 bg-amber-100 text-amber-600 rounded text-[9px] font-bold hover:bg-amber-200 transition-colors">A+</button>
-                    <button onClick={() => addCard('away', 'yellow')} className="px-2 py-0.5 bg-amber-100 text-amber-600 rounded text-[9px] font-bold hover:bg-amber-200 transition-colors">B+</button>
-                  </div>
+      {/* Detail Panel */}
+      {showDetails && (
+        <div className="border-t border-slate-100 bg-slate-50/50 p-5 space-y-6 animate-in slide-in-from-top-2 duration-300">
+           {showConfirmReset && (
+             <div className="p-4 bg-rose-50 border border-rose-100 rounded-xl space-y-3">
+                <div className="flex items-center gap-2 text-rose-600 text-[10px] font-black uppercase tracking-widest">
+                   <AlertCircle size={16} /> DIQQAT!
                 </div>
-                
-                <div className="space-y-2 max-h-40 overflow-y-auto pr-1 scrollbar-hide">
-                   {[...homeYellows, ...homeReds, ...awayYellows, ...awayReds].length === 0 && (
-                     <p className="text-[9px] text-slate-300 text-center italic py-2">Hozircha kartochkalar yo'q</p>
-                   )}
-                   {homeYellows.map((v, i) => (
-                     <div key={`hy-${i}`} className="flex items-center gap-2 bg-white p-2 rounded-xl border border-slate-100 animate-in zoom-in duration-200 shadow-sm">
-                        <div className="w-2.5 h-4 bg-amber-400 rounded-sm shadow-[0_0_5px_rgba(251,191,36,0.5)]"></div>
-                        <select 
-                          value={v} 
-                          onChange={e => updateScorer(homeYellows, setHomeYellows, i, e.target.value)} 
-                          className="flex-1 bg-transparent text-[10px] font-bold border-none outline-none appearance-none"
-                        >
-                          <option value="">O'yinchi tanlang...</option>
-                          {homeTeam?.players.map(p => (
-                            <option key={p} value={p}>
-                              {p === homeTeam.captainName ? `★ ${p} (C)` : p}
-                            </option>
-                          ))}
-                        </select>
-                        <button onClick={() => removeCard(homeYellows, setHomeYellows, i)} className="p-1 hover:bg-rose-50 text-slate-300 hover:text-rose-500 rounded-lg transition-colors"><X size={14}/></button>
-                     </div>
-                   ))}
-                   {/* Logic for Reds/Away similar */}
-                   {homeReds.map((v, i) => (
-                     <div key={`hr-${i}`} className="flex items-center gap-2 bg-white p-2 rounded-xl border border-slate-100 animate-in zoom-in duration-200 shadow-sm">
-                        <div className="w-2.5 h-4 bg-rose-500 rounded-sm shadow-[0_0_5px_rgba(244,63,94,0.5)]"></div>
-                        <select 
-                          value={v} 
-                          onChange={e => updateScorer(homeReds, setHomeReds, i, e.target.value)} 
-                          className="flex-1 bg-transparent text-[10px] font-bold border-none outline-none appearance-none"
-                        >
-                          <option value="">O'yinchi tanlang...</option>
-                          {homeTeam?.players.map(p => (
-                            <option key={p} value={p}>
-                              {p === homeTeam.captainName ? `★ ${p} (C)` : p}
-                            </option>
-                          ))}
-                        </select>
-                        <button onClick={() => removeCard(homeReds, setHomeReds, i)} className="p-1 hover:bg-rose-50 text-slate-300 hover:text-rose-500 rounded-lg transition-colors"><X size={14}/></button>
-                     </div>
-                   ))}
-                   {awayYellows.map((v, i) => (
-                     <div key={`ay-${i}`} className="flex items-center gap-2 bg-white p-2 rounded-xl border border-slate-100 animate-in zoom-in duration-200 shadow-sm">
-                        <div className="w-2.5 h-4 bg-amber-400 rounded-sm"></div>
-                        <select 
-                          value={v} 
-                          onChange={e => updateScorer(awayYellows, setAwayYellows, i, e.target.value)} 
-                          className="flex-1 bg-transparent text-[10px] font-bold border-none outline-none appearance-none"
-                        >
-                          <option value="">O'yinchi tanlang...</option>
-                          {awayTeam?.players.map(p => (
-                            <option key={p} value={p}>
-                              {p === awayTeam.captainName ? `★ ${p} (C)` : p}
-                            </option>
-                          ))}
-                        </select>
-                        <button onClick={() => removeCard(awayYellows, setAwayYellows, i)} className="p-1 hover:bg-rose-50 text-slate-300 hover:text-rose-500 rounded-lg transition-colors"><X size={14}/></button>
-                     </div>
-                   ))}
-                   {awayReds.map((v, i) => (
-                     <div key={`ar-${i}`} className="flex items-center gap-2 bg-white p-2 rounded-xl border border-slate-100 animate-in zoom-in duration-200 shadow-sm">
-                        <div className="w-2.5 h-4 bg-rose-500 rounded-sm"></div>
-                        <select 
-                          value={v} 
-                          onChange={e => updateScorer(awayReds, setAwayRedCards, i, e.target.value)} 
-                          className="flex-1 bg-transparent text-[10px] font-bold border-none outline-none appearance-none"
-                        >
-                          <option value="">O'yinchi tanlang...</option>
-                          {awayTeam?.players.map(p => (
-                            <option key={p} value={p}>
-                              {p === awayTeam.captainName ? `★ ${p} (C)` : p}
-                            </option>
-                          ))}
-                        </select>
-                        <button onClick={() => removeCard(awayReds, setAwayRedCards, i)} className="p-1 hover:bg-rose-50 text-slate-300 hover:text-rose-500 rounded-lg transition-colors"><X size={14}/></button>
-                     </div>
-                   ))}
+                <p className="text-[11px] text-rose-500 font-bold leading-relaxed">Natijani o'zgartirish keyingi barcha bosqichlarni o'chirib yuboradi. Davom etasizmi?</p>
+                <div className="flex gap-2">
+                   <Button size="sm" variant="danger" className="flex-1 rounded-lg" onClick={handleSave}>HA, O'ZGARTIRISH</Button>
+                   <Button size="sm" variant="secondary" className="flex-1 rounded-lg" onClick={() => setShowConfirmReset(false)}>BEKOR QILISH</Button>
                 </div>
              </div>
            )}
 
-           <Button 
-              variant={isFinished ? "secondary" : "primary"} 
-              size="md" 
-              className={`w-full font-black py-4 rounded-2xl shadow-sm tracking-widest text-xs transition-all ${!isFinished ? 'hover:scale-[1.02] active:scale-95' : ''}`}
-              onClick={handleSave} 
-              loading={isUpdating}
-            >
-              {isFinished ? 'NATIJANI TAHRIRLASH' : 'NATIJANI TASDIQLASH'}
+           <div className="space-y-4">
+              <div className="flex items-center justify-between text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">
+                 <span>Hisobni yangilash</span>
+                 <Target size={14} />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                 <div className="flex items-center justify-between bg-white p-2 rounded-xl border border-slate-100">
+                    <button onClick={() => handleScoreChange('home', scoreHome - 1)} className="p-2 hover:bg-slate-50 rounded-lg text-slate-400"><Minus size={16} /></button>
+                    <span className="text-2xl font-black italic">{scoreHome}</span>
+                    <button onClick={() => handleScoreChange('home', scoreHome + 1)} className="p-2 hover:bg-slate-50 rounded-lg text-indigo-600"><Plus size={16} /></button>
+                 </div>
+                 <div className="flex items-center justify-between bg-white p-2 rounded-xl border border-slate-100">
+                    <button onClick={() => handleScoreChange('away', scoreAway - 1)} className="p-2 hover:bg-slate-50 rounded-lg text-slate-400"><Minus size={16} /></button>
+                    <span className="text-2xl font-black italic">{scoreAway}</span>
+                    <button onClick={() => handleScoreChange('away', scoreAway + 1)} className="p-2 hover:bg-slate-50 rounded-lg text-rose-500"><Plus size={16} /></button>
+                 </div>
+              </div>
+           </div>
+
+           {scoreHome === scoreAway && scoreHome > 0 && (
+             <div className="space-y-3 pt-2">
+                <p className="text-[9px] font-black text-center text-slate-400 uppercase tracking-widest italic">Durang! G'olibni tanlang:</p>
+                <div className="flex gap-2">
+                   <Button variant={match.winnerTeamId === match.homeTeamId ? 'primary' : 'outline'} size="sm" className="flex-1 rounded-lg" onClick={() => handleManualWinner(match.homeTeamId)}>
+                      {homeTeam?.name}
+                   </Button>
+                   <Button variant={match.winnerTeamId === match.awayTeamId ? 'primary' : 'outline'} size="sm" className="flex-1 rounded-lg" onClick={() => awayTeam ? handleManualWinner(awayTeam.id) : null}>
+                      {awayTeam?.name}
+                   </Button>
+                </div>
+             </div>
+           )}
+
+           <Button className="w-full rounded-xl h-11 font-black text-xs uppercase tracking-[0.2em]" loading={isUpdating} onClick={handleSave}>
+              SAQLASH VA TASDIQLASH
            </Button>
-        </div>
-
-        {isFinished && scoreHome === scoreAway && !match.winnerTeamId && (
-          <div className="mt-4 p-4 bg-amber-50 border-2 border-dashed border-amber-200 rounded-2xl space-y-4 animate-in zoom-in duration-300">
-             <div className="flex flex-col items-center gap-1">
-                <p className="text-[10px] font-black text-amber-700 uppercase tracking-[0.3em]">Durang natija!</p>
-                <p className="text-[9px] font-bold text-amber-600/60">G'olibni qo'lda tanlang</p>
-             </div>
-             <div className="flex gap-2">
-                <Button variant="outline" size="sm" className="flex-1 text-[10px] font-black border-amber-200 bg-white hover:bg-amber-100 h-10" onClick={() => handleManualWinner(match.homeTeamId)}>
-                   {homeTeam?.name.toUpperCase()}
-                </Button>
-                <Button variant="outline" size="sm" className="flex-1 text-[10px] font-black border-amber-200 bg-white hover:bg-amber-100 h-10" onClick={() => handleManualWinner(match.awayTeamId!)}>
-                   {awayTeam?.name.toUpperCase()}
-                </Button>
-             </div>
-          </div>
-        )}
-
-        {showConfirmReset && (
-          <div className="absolute inset-0 bg-white/95 z-50 flex flex-col items-center justify-center p-8 text-center animate-in fade-in duration-300">
-             <div className="w-14 h-14 bg-rose-50 text-rose-500 rounded-2xl flex items-center justify-center mb-4 shadow-sm">
-                <AlertCircle size={32} />
-             </div>
-             <h4 className="text-sm font-black text-slate-900 mb-2 uppercase tracking-tight leading-tight">Zanjirli O'chirish Ogohlantirishi</h4>
-             <p className="text-[11px] font-medium text-slate-500 mb-6 leading-relaxed">Ushbu natijani o'zgartirish keyingi barcha bosqichlardagi o'yinlarni o'chirib yuboradi. Davom etasizmi?</p>
-             <div className="flex flex-col gap-2 w-full">
-                <Button variant="danger" size="sm" className="w-full font-black h-11 rounded-xl" onClick={handleSave}>HA, O'ZGARTIRISH</Button>
-                <Button variant="ghost" size="sm" className="w-full font-bold text-slate-400 h-11" onClick={() => setShowConfirmReset(false)}>BEKOR QILISH</Button>
-             </div>
-          </div>
-        )}
-      </div>
-
-      {match.winnerTeamId && (
-        <div className="absolute -bottom-4 -right-4 opacity-[0.03] pointer-events-none rotate-12 scale-150">
-           <Trophy size={120} />
         </div>
       )}
     </Card>
