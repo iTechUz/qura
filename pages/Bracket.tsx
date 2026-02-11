@@ -257,16 +257,18 @@ const RoadmapPoster: React.FC<{ tournament: Tournament, teams: Team[], rounds: R
     <div id={id} className="w-[1200px] h-[800px] bg-slate-950 p-12 text-white flex flex-col items-center justify-between relative overflow-hidden shrink-0">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_#1e1b4b_0%,_#020617_70%)] opacity-60"></div>
       
-      {/* Improved Header to prevent overlapping */}
+      {/* Improved Header with better spacing to avoid overlap */}
       <div className="relative z-10 text-center w-full flex flex-col items-center">
-        <div className="flex items-center justify-center gap-8 mb-4">
-          <Trophy className="text-amber-400 shrink-0" size={80} />
-          <h1 className="text-8xl font-black uppercase italic tracking-tighter leading-[0.9] pr-4">
-            {tournament.name}
-          </h1>
+        <div className="flex items-center justify-center gap-6 mb-4">
+          <Trophy className="text-amber-400 shrink-0" size={64} />
+          <div className="flex flex-col items-center">
+            <h1 className="text-7xl font-black uppercase italic tracking-tighter leading-tight pr-4">
+              {tournament.name}
+            </h1>
+            <div className="h-1 w-32 bg-indigo-600/50 rounded-full mt-2"></div>
+          </div>
         </div>
-        <div className="h-1 w-48 bg-indigo-600/50 rounded-full mb-4"></div>
-        <p className="text-indigo-400 font-bold uppercase tracking-[0.6em] text-2xl">
+        <p className="text-indigo-400 font-bold uppercase tracking-[0.5em] text-xl mt-2">
           Turnir Jadvali / Roadmap
         </p>
       </div>
@@ -306,13 +308,12 @@ const SquadPoster: React.FC<{ team: Team, tournamentName: string, id: string }> 
     <div id={id} className="w-[800px] h-[1000px] bg-slate-900 p-16 text-white flex flex-col items-center justify-between relative overflow-hidden shrink-0">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_#1e1b4b_0%,_#020617_80%)] opacity-60"></div>
       
-      {/* Improved Header for Squad Poster */}
-      <div className="relative z-10 text-center w-full flex flex-col items-center space-y-4">
-        <p className="text-indigo-400 text-base font-black uppercase tracking-[0.5em]">{tournamentName}</p>
-        <h1 className="text-8xl font-black uppercase italic tracking-tighter leading-[0.9] pr-4">
+      <div className="relative z-10 text-center w-full flex flex-col items-center">
+        <p className="text-indigo-400 text-sm font-black uppercase tracking-[0.4em] mb-4">{tournamentName}</p>
+        <h1 className="text-7xl font-black uppercase italic tracking-tighter leading-tight pr-4">
           {team.name}
         </h1>
-        <div className="w-32 h-2 bg-indigo-600 rounded-full"></div>
+        <div className="w-24 h-1.5 bg-indigo-600 mx-auto rounded-full mt-4"></div>
       </div>
 
       <div className="relative z-10 w-full flex-1 flex flex-col items-center justify-center space-y-8 mt-12">
@@ -343,7 +344,7 @@ export const Bracket: React.FC = () => {
   const [viewportScale, setViewportScale] = React.useState(1);
   const navigate = useNavigate();
 
-  // Dynamic Scaling Effect
+  // Optimized scaling for mobile "Full Screen" effect
   React.useEffect(() => {
     const handleResize = () => {
       const width = window.innerWidth;
@@ -352,14 +353,16 @@ export const Bracket: React.FC = () => {
       const targetWidth = previewData?.type === 'roadmap' ? 1200 : 800;
       const targetHeight = previewData?.type === 'roadmap' ? 800 : 1000;
       
-      const hPadding = width < 768 ? 40 : 120;
-      const vPadding = width < 768 ? 200 : 250;
+      // On small screens, use less padding to make the image "larger"
+      const hPadding = width < 640 ? 0 : 80;
+      const vPadding = width < 640 ? 180 : 250; 
       
       const scaleW = (width - hPadding) / targetWidth;
       const scaleH = (height - vPadding) / targetHeight;
       
-      const scale = Math.min(1, scaleW, scaleH);
-      setViewportScale(scale);
+      // Minimum scale logic for mobile to avoid tiny previews
+      const minScale = width < 640 ? scaleW : Math.min(scaleW, scaleH);
+      setViewportScale(Math.min(1.2, minScale)); // Max 1.2x scale for small posters
     };
 
     if (previewData) {
@@ -397,7 +400,7 @@ export const Bracket: React.FC = () => {
       setPreviewData(null);
     } catch (error) {
       console.error('Export failed:', error);
-      alert('Rasm tayyorlashda xatolik yuz berdi. Iltimos qaytadan urinib ko\'ring.');
+      alert('Rasm tayyorlashda xatolik yuz berdi.');
     } finally {
       setExporting(null);
     }
@@ -430,7 +433,7 @@ export const Bracket: React.FC = () => {
               <span className="text-indigo-600">Tayyor!</span>
             </h1>
             <p className="text-slate-500 max-w-lg mx-auto font-bold text-xs sm:text-base uppercase tracking-widest leading-relaxed opacity-70 px-4">
-              Barcha jamoalar ro'yxatdan o'tdi. Endi qura tashlash orqali raqiblarni aniqlash vaqti keldi.
+              Endi qura tashlash orqali raqiblarni aniqlash vaqti keldi.
             </p>
           </div>
 
@@ -579,7 +582,7 @@ export const Bracket: React.FC = () => {
                         onClick={() => setPreviewData({ id: `squad-export-${team.id}`, type: 'squad', team })}
                         className="flex-1 h-10 sm:h-14 bg-white text-slate-900 rounded-lg sm:rounded-2xl font-black text-[10px] sm:text-xs uppercase italic tracking-widest flex items-center justify-center gap-2 hover:bg-emerald-500 hover:text-white transition-all shadow-xl pr-1"
                       >
-                         <Eye size={14} className="sm:w-[18px] sm:h-[18px]" /> KO'RISH
+                         <Eye size={14} className="sm:w-[18px] h-14 sm:h-[18px]" /> KO'RISH
                       </button>
                       <button 
                         onClick={() => downloadPoster(`squad-export-${team.id}`, `squad_${team.name}`)}
@@ -594,6 +597,7 @@ export const Bracket: React.FC = () => {
         </div>
       )}
 
+      {/* Actual Export Elements (Hidden) */}
       <div className="fixed left-[-5000px] top-0 pointer-events-none">
          <RoadmapPoster tournament={tournament} teams={teams} rounds={rounds} id="roadmap-poster-export" />
          {teams.map(team => (
@@ -601,37 +605,43 @@ export const Bracket: React.FC = () => {
          ))}
       </div>
 
+      {/* Full-Screen Preview Overlay for Mobile */}
       {previewData && (
         <div className="fixed inset-0 z-[150] bg-slate-950/98 backdrop-blur-2xl flex flex-col animate-in fade-in duration-300">
+           {/* Compact Preview Header */}
            <div className="h-16 sm:h-20 bg-slate-900/50 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-4 sm:px-8 shrink-0">
-              <div className="flex items-center gap-3 sm:gap-5">
-                 <button onClick={() => setPreviewData(null)} className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center bg-white/5 hover:bg-rose-500/20 text-white rounded-lg sm:rounded-xl transition-all border border-white/10 group">
-                    <X size={16} className="sm:w-[20px] sm:h-[20px] group-hover:scale-110 transition-transform" />
+              <div className="flex items-center gap-3">
+                 <button onClick={() => setPreviewData(null)} className="w-10 h-10 flex items-center justify-center bg-white/5 hover:bg-rose-500/20 text-white rounded-xl transition-all border border-white/10 group">
+                    <X size={20} className="group-hover:scale-110 transition-transform" />
                  </button>
-                 <div className="h-6 sm:h-8 w-px bg-white/10"></div>
+                 <div className="h-6 w-px bg-white/10 hidden xs:block"></div>
                  <div className="min-w-0">
-                    <h3 className="text-sm sm:text-lg font-black text-white uppercase italic tracking-tight leading-none truncate pr-1">{previewData.type === 'roadmap' ? 'ROADMAP' : 'SQUAD'}</h3>
-                    <p className="text-[7px] sm:text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-1 truncate">{previewData.team?.name || tournament.name}</p>
+                    <h3 className="text-sm sm:text-lg font-black text-white uppercase italic tracking-tight leading-none truncate pr-1">
+                      {previewData.type === 'roadmap' ? 'ROADMAP' : 'SQUAD'}
+                    </h3>
+                    <p className="text-[7px] sm:text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-1 truncate">
+                      {previewData.team?.name || tournament.name}
+                    </p>
                  </div>
               </div>
 
-              <div className="flex items-center gap-2 sm:gap-3">
-                 <div className="hidden xs:flex items-center gap-2 px-2 py-1 bg-indigo-500/10 text-indigo-400 rounded-lg border border-indigo-500/20 text-[7px] font-black uppercase tracking-widest whitespace-nowrap">
-                    <Sparkles size={8} /> HQ Rendering
-                 </div>
-                 <button className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center bg-white/5 hover:bg-white/10 text-white rounded-lg sm:rounded-xl transition-all border border-white/10 shrink-0">
-                    <Share2 size={16} className="sm:w-[18px] sm:h-[18px]" />
+              <div className="flex items-center gap-2">
+                 <button className="w-10 h-10 flex items-center justify-center bg-white/5 hover:bg-white/10 text-white rounded-xl transition-all border border-white/10">
+                    <Share2 size={18} />
                  </button>
               </div>
            </div>
 
-           <div className="flex-1 overflow-auto p-4 sm:p-12 scrollbar-hide flex items-center justify-center cursor-zoom-out" onClick={() => setPreviewData(null)}>
+           {/* Mobile-First Full Viewport */}
+           <div className="flex-1 overflow-auto flex items-center justify-center scrollbar-hide bg-[#020617] relative p-0 sm:p-12">
               <div 
-                className="relative shadow-[0_50px_100px_rgba(0,0,0,0.5)] rounded-[1.5rem] sm:rounded-[2rem] overflow-hidden animate-in zoom-in duration-500 transition-all cursor-default"
-                style={{ transform: `scale(${viewportScale})`, transformOrigin: 'center center' }}
-                onClick={(e) => e.stopPropagation()}
+                className="relative shadow-[0_50px_100px_rgba(0,0,0,0.5)] transition-transform duration-500 ease-out"
+                style={{ 
+                  transform: `scale(${viewportScale})`,
+                  transformOrigin: 'center center'
+                }}
               >
-                 <div className="flex items-center justify-center bg-slate-900 border-4 border-white/5 rounded-[inherit]">
+                 <div className="flex items-center justify-center rounded-none sm:rounded-[2rem] overflow-hidden border-4 border-white/5">
                     {previewData.type === 'roadmap' ? (
                        <RoadmapPoster tournament={tournament} teams={teams} rounds={rounds} id="roadmap-preview-internal" />
                     ) : (
@@ -640,28 +650,29 @@ export const Bracket: React.FC = () => {
                  </div>
                  
                  {exporting && (
-                   <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-md flex flex-col items-center justify-center z-50 text-white p-10">
-                      <div className="w-12 h-12 sm:w-16 sm:h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-                      <h4 className="text-lg sm:text-xl font-black italic uppercase tracking-tighter">RENDER QILINMOQDA...</h4>
+                   <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-md flex flex-col items-center justify-center z-50 text-white">
+                      <div className="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+                      <h4 className="text-xl font-black italic uppercase tracking-tighter animate-pulse">RENDER QILINMOQDA...</h4>
                    </div>
                  )}
               </div>
            </div>
 
-           <div className="h-24 sm:h-28 bg-slate-900/80 backdrop-blur-xl border-t border-white/5 flex items-center justify-center px-4 sm:px-8 shrink-0">
-              <div className="flex gap-2 sm:gap-3 w-full max-w-lg">
+           {/* Bottom Bar - Mobile Optimized */}
+           <div className="h-24 sm:h-28 bg-slate-900/90 backdrop-blur-xl border-t border-white/5 flex items-center justify-center px-4 sm:px-8 shrink-0">
+              <div className="flex gap-3 w-full max-w-lg">
                  <Button 
                    size="lg" 
-                   className="flex-1 h-12 sm:h-14 rounded-xl sm:rounded-2xl text-[10px] sm:text-sm font-black shadow-2xl shadow-indigo-500/20 relative group overflow-hidden tracking-widest uppercase italic pr-2" 
+                   className="flex-1 h-14 rounded-2xl text-xs sm:text-sm font-black shadow-2xl shadow-indigo-500/20 relative group overflow-hidden tracking-widest uppercase italic pr-2" 
                    onClick={() => downloadPoster(previewData.id, `${previewData.type}_${previewData.team?.name || 'tournament'}`)} 
                    loading={exporting !== null}
                  >
-                    <Download size={16} className="mr-2 sm:mr-3 sm:w-[20px] sm:h-[20px]" /> PNG YUKLASH
+                    <Download size={20} className="mr-3" /> PNG YUKLASH
                  </Button>
                  <Button 
                    variant="glass" 
                    size="lg" 
-                   className="px-6 sm:px-8 h-12 sm:h-14 rounded-xl sm:rounded-2xl font-black text-[9px] sm:text-xs uppercase italic border-white/10 hover:bg-white/5 tracking-widest" 
+                   className="px-8 h-14 rounded-2xl font-black text-[10px] uppercase italic border-white/10 hover:bg-white/5 tracking-widest" 
                    onClick={() => setPreviewData(null)}
                  >
                     YOPISH
