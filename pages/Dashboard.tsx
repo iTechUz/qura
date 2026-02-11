@@ -72,9 +72,9 @@ export const Dashboard: React.FC = () => {
               <span className="text-[10px] font-black uppercase tracking-[0.2em]">EduCup v2.5 Pro</span>
             </div>
             
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-slate-900 tracking-tighter leading-tight animate-in fade-in zoom-in duration-700 uppercase italic">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-normal animate-in fade-in zoom-in duration-700 uppercase italic pr-4">
               TOURNAMENT <br />
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-violet-600 to-indigo-600 bg-[length:200%_auto] animate-[gradient_3s_linear_infinite]">
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-violet-600 to-indigo-600 bg-[length:200%_auto] animate-[gradient_3s_linear_infinite] pr-2">
                 MANAGER
               </span>
             </h1>
@@ -191,15 +191,15 @@ export const Dashboard: React.FC = () => {
                       onChange={e => setEditTitleValue(e.target.value)}
                       onKeyDown={e => e.key === 'Enter' && handleSaveTitle()}
                       onBlur={handleSaveTitle}
-                      className="bg-white/10 border-b-2 border-indigo-500 outline-none text-2xl md:text-4xl font-black italic uppercase tracking-tighter leading-none w-full px-1 py-1 rounded-t-lg"
+                      className="bg-white/10 border-b-2 border-indigo-500 outline-none text-2xl md:text-4xl font-black italic uppercase tracking-tight leading-normal w-full px-1 py-1 rounded-t-lg pr-4"
                     />
                     <button onClick={handleSaveTitle} className="p-2 bg-emerald-500 rounded-lg text-white hover:scale-105 transition-transform">
                        <Check size={18} />
                     </button>
                  </div>
                ) : (
-                 <h1 className="text-2xl md:text-4xl font-black italic uppercase tracking-tighter leading-tight flex items-center gap-3 group">
-                    <span className="bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-200">{tournament.name}</span>
+                 <h1 className="text-2xl md:text-4xl font-black italic uppercase tracking-tight leading-normal flex items-center gap-3 group pr-4">
+                    <span className="bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-200 pr-2">{tournament.name}</span>
                     <button 
                       onClick={() => setIsEditingTitle(true)}
                       className="p-1.5 opacity-0 group-hover:opacity-100 hover:bg-white/10 rounded-lg transition-all"
@@ -213,7 +213,7 @@ export const Dashboard: React.FC = () => {
                <div className="flex items-center gap-5 pt-1">
                   <div className="flex flex-col">
                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Format</span>
-                     <span className="text-base font-black italic">{tournament.playersPerTeam}×{tournament.playersPerTeam}</span>
+                     <span className="text-base font-black italic">5x5</span>
                   </div>
                   <div className="w-px h-6 bg-white/10"></div>
                   <div className="flex flex-col">
@@ -242,7 +242,7 @@ export const Dashboard: React.FC = () => {
            <div className="flex justify-between items-start mb-6">
               <div className="space-y-0.5">
                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Progress</p>
-                 <h2 className="text-3xl font-black text-slate-900 italic tracking-tighter">{progressPercent}%</h2>
+                 <h2 className="text-3xl font-black text-slate-900 italic tracking-tight">{progressPercent}%</h2>
               </div>
               <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl">
                  <Activity size={20} />
@@ -265,7 +265,7 @@ export const Dashboard: React.FC = () => {
            </div>
            <div>
               <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-0.5">Gollar</p>
-              <h3 className="text-3xl font-black text-slate-900 italic tracking-tighter">{stats.totalGoals}</h3>
+              <h3 className="text-3xl font-black text-slate-900 italic tracking-tight">{stats.totalGoals}</h3>
            </div>
         </Card>
 
@@ -275,7 +275,7 @@ export const Dashboard: React.FC = () => {
            </div>
            <div>
               <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-0.5">Kartochkalar</p>
-              <h3 className="text-3xl font-black text-slate-900 italic tracking-tighter">{stats.totalCards}</h3>
+              <h3 className="text-3xl font-black text-slate-900 italic tracking-tight">{stats.totalCards}</h3>
            </div>
         </Card>
       </div>

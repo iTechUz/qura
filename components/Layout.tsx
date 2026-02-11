@@ -68,7 +68,7 @@ export const Layout: React.FC = () => {
               <Trophy size={22} fill="currentColor" />
             </div>
             <div className="flex flex-col">
-              <span className="font-black text-xl text-slate-900 tracking-tighter uppercase italic leading-none">EduCup</span>
+              <span className="font-black text-xl text-slate-900 tracking-tight uppercase italic leading-none pr-2">EduCup</span>
               <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] mt-1">Manager Pro</span>
             </div>
           </div>
