@@ -22,14 +22,28 @@ export const Teams: React.FC = () => {
   const navigate = useNavigate();
   const [newTeamName, setNewTeamName] = React.useState('');
   const [activePlayerInputs, setActivePlayerInputs] = React.useState<Record<string, string>>({});
+  const [isSeeding, setIsSeeding] = React.useState(false);
+  const [isAddingTeam, setIsAddingTeam] = React.useState(false);
 
   if (!tournament) return null;
 
   const handleAddTeam = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTeamName.trim() || teams.length >= 10) return;
-    addTeam(newTeamName.trim());
-    setNewTeamName('');
+    setIsAddingTeam(true);
+    setTimeout(() => {
+      addTeam(newTeamName.trim());
+      setNewTeamName('');
+      setIsAddingTeam(false);
+    }, 400);
+  };
+
+  const handleSeed = () => {
+    setIsSeeding(true);
+    setTimeout(() => {
+      seedTeams();
+      setIsSeeding(false);
+    }, 800);
   };
 
   const handleAddPlayer = (teamId: string) => {
@@ -76,7 +90,7 @@ export const Teams: React.FC = () => {
               <span className="text-sm font-black text-slate-900">{teams.length} / 10</span>
            </div>
            {!isTournamentStarted && teams.length === 0 && (
-            <Button variant="secondary" size="sm" className="rounded-xl" onClick={seedTeams}>
+            <Button variant="secondary" size="sm" className="rounded-xl" onClick={handleSeed} loading={isSeeding}>
               <Sparkles size={14} className="mr-2" /> Demo Seeding
             </Button>
            )}
@@ -86,14 +100,14 @@ export const Teams: React.FC = () => {
       {!isTournamentStarted && (
         <form onSubmit={handleAddTeam} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row gap-3">
           <input 
-            disabled={teams.length >= 10}
+            disabled={teams.length >= 10 || isAddingTeam}
             type="text" 
             value={newTeamName}
             onChange={e => setNewTeamName(e.target.value)}
             placeholder="Yangi jamoa nomi..."
             className="flex-1 px-4 py-3 rounded-xl bg-slate-50 border-none focus:ring-2 focus:ring-indigo-500 outline-none font-bold text-base transition-all"
           />
-          <Button type="submit" disabled={teams.length >= 10 || !newTeamName.trim()} className="rounded-xl px-8">
+          <Button type="submit" disabled={teams.length >= 10 || !newTeamName.trim()} loading={isAddingTeam} className="rounded-xl px-8">
             <Plus size={18} className="mr-2" /> Qo'shish
           </Button>
         </form>

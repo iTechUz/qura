@@ -7,6 +7,7 @@ import { buildRound1Matches, buildNextRoundMatches } from './utils';
 
 interface TournamentActions {
   initTournament: (name: string, playersPerTeam: number, date?: string) => void;
+  renameTournament: (name: string) => void;
   resetTournament: () => void;
   addTeam: (name: string) => void;
   seedTeams: () => void;
@@ -40,6 +41,10 @@ export const useTournamentStore = create<TournamentState & TournamentActions>()(
         rounds: [],
       }),
 
+      renameTournament: (name) => set(state => ({
+        tournament: state.tournament ? { ...state.tournament, name } : null
+      })),
+
       resetTournament: () => set({ tournament: null, teams: [], rounds: [] }),
 
       addTeam: (name) => {
@@ -68,7 +73,7 @@ export const useTournamentStore = create<TournamentState & TournamentActions>()(
             id: uuidv4(),
             name: name,
             players: players,
-            captainName: players[0] // Avtomatik birinchi o'yinchini sardor qilish
+            captainName: players[0]
           };
         });
         set({ teams: newTeams });
@@ -125,14 +130,13 @@ export const useTournamentStore = create<TournamentState & TournamentActions>()(
         
         let newChampionId = state.tournament?.championTeamId;
         
-        // Check for champion in final round
         if (updatedRound.matches.length === 1) {
              newChampionId = updatedMatch?.winnerTeamId;
         }
 
         return { 
           rounds: newRounds, 
-          tournament: state.tournament ? { ...state.tournament, championTeamId: newChampionId } : null 
+          tournament: state.tournament ? { ...state.tournament, name: state.tournament.name, championTeamId: newChampionId } : null 
         };
       }),
 
